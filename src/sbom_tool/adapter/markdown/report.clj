@@ -140,7 +140,7 @@
    :license-summary "License Summary"
    :multi-licensed "Multi-licensed Components"
    :unidentified-licenses "Unidentified Licenses"
-   :blacklisted-licenses "Blacklisted Licenses"
+   :blacklisted-licenses "Blacklisted Licenses Used"
    :vulnerabilities "Vulnerabilities"
    :vulnerability-summary "Vulnerability Summary"
    :blocked-vulnerabilities "Blocked Vulnerabilities"})
