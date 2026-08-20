@@ -110,6 +110,22 @@
       (is (str/includes? markdown "## License Summary"))
       (is (str/includes? markdown "## Vulnerability Summary")))))
 
+(deftest render-all-license-test
+  (testing "renders one heading and body per report in the :all-license bundle, without a wrapping heading"
+    (let [markdown (markdown/render-report
+                    :all-license
+                    {:license-summary {:white 1}})]
+      (is (not (str/includes? markdown "## All")))
+      (is (str/includes? markdown "## License Summary")))))
+
+(deftest render-all-vulnerabilities-test
+  (testing "renders one heading and body per report in the :all-vulnerabilities bundle, without a wrapping heading"
+    (let [markdown (markdown/render-report
+                    :all-vulnerabilities
+                    {:vulnerability-summary {:by-severity {} :affected-components 0}})]
+      (is (not (str/includes? markdown "## All")))
+      (is (str/includes? markdown "## Vulnerability Summary")))))
+
 (deftest template-render-dispatch-test
   (testing "the :markdown format is registered on the application template port"
     (is (str/includes? (template/render :markdown :license-summary {:white 1}) "## License Summary"))))

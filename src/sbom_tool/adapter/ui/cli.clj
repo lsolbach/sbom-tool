@@ -18,10 +18,31 @@
 (def description
   "Reads SBOMs and reports e.g. licenses.")
 
+(def ^:private all-license-reports
+  "The license reports bundled by `:all-license`."
+  (fn []
+    {:licenses (report/licenses)
+     :license-summary (report/license-summary)
+     :multi-licensed (report/multi-licensed)
+     :unidentified-licenses (report/unidentified-licenses)
+     :blacklisted-licenses (report/blacklisted-licenses)}))
+
+(def ^:private all-vulnerability-reports
+  "The vulnerability reports bundled by `:all-vulnerabilities`. Kept out of
+   the `:all-license` default because most SBOMs carry no vulnerability
+   data at all, and reporting zero vulnerabilities in that case reads as
+   \"scanned, none found\" rather than \"nothing to say\" -- so callers
+   must opt into vulnerability reporting explicitly."
+  (fn []
+    {:vulnerabilities (report/vulnerabilities-by-component)
+     :vulnerability-summary (report/vulnerability-summary)
+     :blocked-vulnerabilities (report/blocked-vulnerabilities)}))
+
 (def reports
   "Map of `--report` keyword to the no-arg report function it invokes.
-   `:all` bundles every individual report into a single map, keyed the
-   same way."
+   `:all-license` bundles every license report, `:all-vulnerabilities`
+   bundles every vulnerability report, and `:all` bundles both, each keyed
+   the same way as this map."
   {:licenses report/licenses
    :license-summary report/license-summary
    :multi-licensed report/multi-licensed
@@ -30,15 +51,10 @@
    :vulnerabilities report/vulnerabilities-by-component
    :vulnerability-summary report/vulnerability-summary
    :blocked-vulnerabilities report/blocked-vulnerabilities
+   :all-license all-license-reports
+   :all-vulnerabilities all-vulnerability-reports
    :all (fn []
-          {:licenses (report/licenses)
-           :license-summary (report/license-summary)
-           :multi-licensed (report/multi-licensed)
-           :unidentified-licenses (report/unidentified-licenses)
-           :blacklisted-licenses (report/blacklisted-licenses)
-           :vulnerabilities (report/vulnerabilities-by-component)
-           :vulnerability-summary (report/vulnerability-summary)
-           :blocked-vulnerabilities (report/blocked-vulnerabilities)})})
+          (merge (all-license-reports) (all-vulnerability-reports)))})
 
 (def cli-opts
   "Commandline options specification."
@@ -48,7 +64,7 @@
    ["-s" "--sbom-format FORMAT" "Format of the SBOMs: auto (both), cdx or spdx" :default :auto :parse-fn keyword]
    ["-m" "--merge-unidentified" "Also merge components across documents that carry neither a purl nor a cpe, by name/version alone -- riskier, since unrelated packages can coincidentally share both across ecosystems"]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
-    :default :licenses
+    :default :all-license
     :parse-fn keyword
     :validate [(set (keys reports))
                (str "Must be one of: " (str/join ", " (map name (keys reports))))]]
@@ -126,13 +142,13 @@
 
 (defn dispatch
   "Dispatch on options: prints the requested `--report`, defaulting to
-   `licenses`, rendered in the requested `--output-format` (`:edn`, printed
-   as-is, or `:json`/`:markdown`, rendered via `template/render`), and,
-   when `--fail-on-violations` is set, exits with status 1 if `violations?`
-   is true."
+   `all-license`, rendered in the requested `--output-format` (`:edn`,
+   printed as-is, or `:json`/`:markdown`, rendered via `template/render`),
+   and, when `--fail-on-violations` is set, exits with status 1 if
+   `violations?` is true."
   [options]
   (let [report-key (:report options)
-        report-fn (get reports report-key report/licenses)
+        report-fn (get reports report-key all-license-reports)
         data (report-fn)
         output-format (:output-format options)]
     (if (= :edn output-format)

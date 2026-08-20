@@ -156,12 +156,17 @@
    :vulnerability-summary render-vulnerability-summary
    :blocked-vulnerabilities render-blocked-vulnerabilities})
 
+(def ^:private bundle-report-keys
+  "Report keys whose data is a map of report key to that report's data, as
+   produced by the CLI's `:all`, `:all-license` and `:all-vulnerabilities`
+   reports."
+  #{:all :all-license :all-vulnerabilities})
+
 (defn render-report
-  "Renders `report-key`'s `data` as markdown. For `:all` (a map of report
-   key to that report's data, as produced by the CLI's `:all` report),
-   renders one heading and body per entry."
+  "Renders `report-key`'s `data` as markdown. For a bundle report key (see
+   `bundle-report-keys`), renders one heading and body per entry."
   [report-key data]
-  (if (= :all report-key)
+  (if (contains? bundle-report-keys report-key)
     (str/join "\n" (for [[key value] data]
                       (render-report key value)))
     (str "## " (get report-headings report-key (name report-key)) "\n\n"
