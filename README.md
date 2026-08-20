@@ -1,11 +1,11 @@
 # SBOM Tool
-Reads software bill of material (SBOM) files and reports on them.
-
-Supports CycloneDX 1.6 (`*.cdx.json`) and SPDX 2.2 (`*.spdx.json`) files.
+The SBOM Tool reads software bill of material (SBOM) files and reports on them.
+It currently supports CycloneDX 1.6 (`*.cdx.json`) and SPDX 2.2 (`*.spdx.json`) files.
 
 ## Usage
+The SBOM Tool is written in Clojure.
 
-Run with Leiningen:
+Run with [Leiningen](https://leiningen.org/):
 
 ```
 lein run -- -I sboms -l example-license-policy.edn
