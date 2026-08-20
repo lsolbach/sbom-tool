@@ -63,7 +63,15 @@
                       :vulnerabilities [{:id "CVE-1" :severity :high :status :blocked}]
                       :sources [:cyclonedx]}])]
       (is (str/includes? markdown "## Vulnerabilities"))
-      (is (str/includes? markdown "| a | 1 | library | CVE-1 (high, blocked) | cyclonedx |")))))
+      (is (str/includes? markdown "| a | 1 | library | CVE-1 (high, blocked) | cyclonedx |"))))
+  (testing "links well-formed CVE ids to their opencve.io record"
+    (let [markdown (markdown/render-report
+                    :vulnerabilities
+                    [{:id "pkg:a@1" :name "a" :version "1" :component-type :library
+                      :vulnerabilities [{:id "CVE-2026-71038" :severity :high :status :blocked}]
+                      :sources [:cyclonedx]}])]
+      (is (str/includes? markdown
+                          "[CVE-2026-71038](https://app.opencve.io/cve/CVE-2026-71038) (high, blocked)")))))
 
 (deftest render-vulnerability-summary-test
   (testing "renders severities in a fixed most-to-least-severe order plus the affected count"
@@ -80,7 +88,13 @@
     (let [markdown (markdown/render-report
                     :blocked-vulnerabilities
                     [{:id "CVE-1" :severity :critical :affected ["pkg:a@1"] :description "bad"}])]
-      (is (str/includes? markdown "| CVE-1 | critical | pkg:a@1 | bad |")))))
+      (is (str/includes? markdown "| CVE-1 | critical | pkg:a@1 | bad |"))))
+  (testing "links well-formed CVE ids to their opencve.io record"
+    (let [markdown (markdown/render-report
+                    :blocked-vulnerabilities
+                    [{:id "CVE-2026-71038" :severity :critical :affected ["pkg:a@1"] :description "bad"}])]
+      (is (str/includes? markdown
+                          "| [CVE-2026-71038](https://app.opencve.io/cve/CVE-2026-71038) | critical | pkg:a@1 | bad |")))))
 
 (deftest render-empty-report-test
   (testing "renders a placeholder instead of an empty table"

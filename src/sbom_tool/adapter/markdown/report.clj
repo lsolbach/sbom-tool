@@ -39,9 +39,20 @@
 (def ^:private vulnerability-status-label
   {:ok "ok" :blocked "blocked" :accepted "accepted"})
 
+(def ^:private cve-id-pattern
+  #"(?i)^CVE-\d{4}-\d{4,}$")
+
+(defn- format-vulnerability-id
+  "Renders `id` as a markdown link to its CVE record on opencve.io if `id`
+   looks like a CVE id (e.g. \"CVE-2026-71038\"), otherwise returns `id` as-is."
+  [id]
+  (if (re-matches cve-id-pattern id)
+    (str "[" id "](https://app.opencve.io/cve/" id ")")
+    id))
+
 (defn- format-vulnerability-entry
   [{:keys [id severity status]}]
-  (str id " (" (name severity) ", " (get vulnerability-status-label status (name status)) ")"))
+  (str (format-vulnerability-id id) " (" (name severity) ", " (get vulnerability-status-label status (name status)) ")"))
 
 (defn- format-choice
   "Formats one license choice (a set of license ids that must be satisfied
@@ -119,7 +130,7 @@
   [data]
   (md-table ["CVE" "Severity" "Affected" "Description"]
             (for [entry data]
-              [(:id entry) (some-> (:severity entry) name)
+              [(format-vulnerability-id (:id entry)) (some-> (:severity entry) name)
                (str/join ", " (:affected entry))
                (or (:description entry) "")])))
 
