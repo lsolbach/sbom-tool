@@ -1,7 +1,7 @@
 # SBOM Tool
 Reads software bill of material (SBOM) files and reports on them.
 
-Supports CycloneDX 1.6 (`*.cdx.json`) and SPDX 2.2 (`*.spdx.json`) files.
+Supports CycloneDX 1.6 (`*.cdx.json`) and SPDX 2.2/2.3 (`*.spdx.json`) files.
 
 ## Usage
 
@@ -21,7 +21,7 @@ java -jar target/sbom-tool.jar -I sboms -l example-license-policy.edn
 Or run with [babashka](https://babashka.org/):
 
 ```
-bb -m sbom-tool.adapter.ui.cli -I sboms -l example-license-policy.edn
+sbom-tool.bb -I sboms -l example-license-policy.edn
 ```
 
 To gate a CI pipeline on blacklisted licenses or policy-blocked vulnerabilities, add
@@ -29,7 +29,7 @@ To gate a CI pipeline on blacklisted licenses or policy-blocked vulnerabilities,
 which `--report` was requested):
 
 ```
-bb -m sbom-tool.adapter.ui.cli -I sboms \
+sbom-tool.bb -I sboms \
    -l example-license-policy.edn -V example-vulnerability-policy.edn \
    -r all --fail-on-violations
 ```
@@ -37,13 +37,13 @@ bb -m sbom-tool.adapter.ui.cli -I sboms \
 For a human-readable summary (e.g. to paste into a PR or CI job summary), render as markdown:
 
 ```
-bb -m sbom-tool.adapter.ui.cli -I sboms -r all -o markdown
+sbom-tool.bb -I sboms -r all -o markdown
 ```
 
 Or, for consumption by other tooling, render as JSON:
 
 ```
-bb -m sbom-tool.adapter.ui.cli -I sboms -r all -o json
+sbom-tool.bb -I sboms -r all -o json
 ```
 
 ### Options
