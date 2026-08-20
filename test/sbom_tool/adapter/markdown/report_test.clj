@@ -17,13 +17,22 @@
       (is (str/includes? markdown "| mit-lib | 1 | library | MIT (ok) | cyclonedx |"))
       (is (str/includes? markdown "| gpl-lib | 1 | library | GPL-3.0-only (blacklisted) | spdx |")))))
 
-(deftest render-license-summary-test
+(deftest render-license-status-summary-test
   (testing "renders a fixed-order status/count table, defaulting missing statuses to 0"
-    (let [markdown (markdown/render-report :license-summary {:white 2 :black 1})]
-      (is (str/includes? markdown "## License Summary"))
+    (let [markdown (markdown/render-report :license-status-summary {:white 2 :black 1})]
+      (is (str/includes? markdown "## License Status Summary"))
       (is (str/includes? markdown "| white | 2 |"))
       (is (str/includes? markdown "| grey | 0 |"))
       (is (str/includes? markdown "| black | 1 |")))))
+
+(deftest render-license-summary-test
+  (testing "renders a count-per-license table, most-used license first"
+    (let [markdown (markdown/render-report :license-summary {"MIT" 1 "Apache-2.0" 3})]
+      (is (str/includes? markdown "## License Summary"))
+      (is (str/includes? markdown "| License | Count |"))
+      (is (str/includes? markdown "| Apache-2.0 | 3 |"))
+      (is (str/includes? markdown "| MIT | 1 |"))
+      (is (< (str/index-of markdown "Apache-2.0") (str/index-of markdown "| MIT"))))))
 
 (deftest render-multi-licensed-test
   (testing "joins choices with OR and conjunctive choices with AND"
@@ -104,7 +113,7 @@
   (testing "renders one heading and body per report in the :all bundle, without a wrapping heading"
     (let [markdown (markdown/render-report
                     :all
-                    {:license-summary {:white 1}
+                    {:license-summary {"MIT" 1}
                      :vulnerability-summary {:by-severity {} :affected-components 0}})]
       (is (not (str/includes? markdown "## All")))
       (is (str/includes? markdown "## License Summary"))
@@ -114,7 +123,7 @@
   (testing "renders one heading and body per report in the :all-license bundle, without a wrapping heading"
     (let [markdown (markdown/render-report
                     :all-license
-                    {:license-summary {:white 1}})]
+                    {:license-summary {"MIT" 1}})]
       (is (not (str/includes? markdown "## All")))
       (is (str/includes? markdown "## License Summary")))))
 
@@ -128,4 +137,4 @@
 
 (deftest template-render-dispatch-test
   (testing "the :markdown format is registered on the application template port"
-    (is (str/includes? (template/render :markdown :license-summary {:white 1}) "## License Summary"))))
+    (is (str/includes? (template/render :markdown :license-summary {"MIT" 1}) "## License Summary"))))

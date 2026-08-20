@@ -55,7 +55,7 @@ sbom-tool.bb -I sboms -r all-license -o json
 | `-m, --merge-unidentified`          | `false`    | Also merge components across documents that carry neither a purl nor a cpe, by name/version alone (see "Multi-format consolidation" below) |
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
-| `-r, --report REPORT`               | `all-license` | Report to generate: `licenses`, `license-summary`, `multi-licensed`, `unidentified-licenses`, `blacklisted-licenses`, `vulnerabilities`, `vulnerability-summary`, `blocked-vulnerabilities`, `all-license` (every license report), `all-vulnerabilities` (every vulnerability report) or `all` (both) |
+| `-r, --report REPORT`               | `all-license` | Report to generate: `licenses`, `license-status-summary`, `license-summary`, `multi-licensed`, `unidentified-licenses`, `blacklisted-licenses`, `vulnerabilities`, `vulnerability-summary`, `blocked-vulnerabilities`, `all-license` (every license report), `all-vulnerabilities` (every vulnerability report) or `all` (both) |
 | `-o, --output-format FORMAT`        | `edn`      | Output format: `edn`, `json` or `markdown` |
 | `-f, --fail-on-violations`          | `false`    | Exit with status 1 if there are blacklisted licenses or policy-blocked vulnerabilities |
 | `-h, --help`                        | —          | Print usage                         |

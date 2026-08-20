@@ -22,6 +22,7 @@
   "The license reports bundled by `:all-license`."
   (fn []
     {:licenses (report/licenses)
+     :license-status-summary (report/license-status-summary)
      :license-summary (report/license-summary)
      :multi-licensed (report/multi-licensed)
      :unidentified-licenses (report/unidentified-licenses)
@@ -44,6 +45,7 @@
    bundles every vulnerability report, and `:all` bundles both, each keyed
    the same way as this map."
   {:licenses report/licenses
+   :license-status-summary report/license-status-summary
    :license-summary report/license-summary
    :multi-licensed report/multi-licensed
    :unidentified-licenses report/unidentified-licenses
@@ -181,20 +183,6 @@
       (handle options))))
 
 (comment
-  (slurp "C:/projects/msg/Sima-IAP/input/SBOM/ActivityHost.cdx.json")
-  (initialize-state {:input-path "C:/projects/msg/Sima-IAP/input/SBOM"
-                     :sbom-format :cdx
-                     :license-policy "./example-license-policy.edn"})
-  (count (repo/sboms))
-  (count (repo/components))
-  (repo/policies)
-  (report/unidentified-licenses)
-
-  ;
-  )
-
-(comment
   (-main "--help")
-  (-main "-I" "C:/projects/msg/Sima-IAP/input/SBOM")
   ;
   )

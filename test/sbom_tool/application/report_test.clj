@@ -39,9 +39,13 @@
     (test-fn)
     (reset! repo/state {})))
 
-(deftest license-summary-test
+(deftest license-status-summary-test
   (testing "counts licenses per policy status"
-    (is (= {:white 1 :black 1} (report/license-summary)))))
+    (is (= {:white 1 :black 1} (report/license-status-summary)))))
+
+(deftest license-summary-test
+  (testing "counts components per license id"
+    (is (= {"MIT" 1 "GPL-3.0-only" 1} (report/license-summary)))))
 
 (deftest blacklisted-licenses-test
   (testing "returns only components with at least one blacklisted license"

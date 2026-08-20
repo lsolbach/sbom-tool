@@ -77,11 +77,18 @@
                (str/join "; " (map format-license-entry (:licenses entry)))
                (format-sources (:sources entry))])))
 
-(defn- render-license-summary
+(defn- render-license-status-summary
   [data]
   (md-table ["Status" "Count"]
             (for [status [:white :grey :black]]
               [(name status) (str (get data status 0))])))
+
+(defn- render-license-summary
+  [data]
+  (md-table ["License" "Count"]
+            (->> data
+                 (sort-by (juxt (comp - val) key))
+                 (map (fn [[license count]] [license (str count)])))))
 
 (defn- render-multi-licensed
   [data]
@@ -137,6 +144,7 @@
 (def ^:private report-headings
   "Markdown section heading per report key."
   {:licenses "Licenses"
+   :license-status-summary "License Status Summary"
    :license-summary "License Summary"
    :multi-licensed "Multi-licensed Components"
    :unidentified-licenses "Unidentified Licenses"
@@ -148,6 +156,7 @@
 (def ^:private report-renderers
   "Renderer function per report key."
   {:licenses render-licenses
+   :license-status-summary render-license-status-summary
    :license-summary render-license-summary
    :multi-licensed render-multi-licensed
    :unidentified-licenses render-unidentified-licenses

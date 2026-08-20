@@ -47,13 +47,22 @@
                       :licenses choices})))))
        vec))
 
-(defn license-summary
+(defn license-status-summary
   "Returns the count of licenses per policy status (:white, :black, :grey)
    across all components."
   []
   (->> (licenses)
        (mapcat :licenses)
        (map :status)
+       frequencies))
+
+(defn license-summary
+  "Returns the count of components using each license (by license id)
+   across all components."
+  []
+  (->> (licenses)
+       (mapcat :licenses)
+       (map :license)
        frequencies))
 
 (defn blacklisted-licenses
