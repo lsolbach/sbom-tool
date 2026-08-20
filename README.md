@@ -111,3 +111,9 @@ documents — matching them by name/version alone is a heuristic that can wrongl
 unrelated packages that happen to share both (plausible across ecosystems, e.g. a Python and an
 npm package both called `requests`). Pass `-m`/`--merge-unidentified` to opt into that fallback
 matching anyway.
+
+## Copyright
+© 2026 Ludger Solbach
+
+## License
+Eclipse Public License 1.0 (EPL1.0)
