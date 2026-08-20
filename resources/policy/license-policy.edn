@@ -1,0 +1,75 @@
+;; License policy for sbom-tool, keyed by component usage (the component's
+;; type, see sbom-tool.domain.sbom's ::component-type: :application
+;; :framework :library :container :operating-system :device :file
+;; :firmware :other), so that reports can be generated per usage category.
+;;
+;; :default applies to any component whose type has no specific entry below.
+;; - :whitelist licenses are considered safe to use without further review.
+;; - :blacklist licenses (copyleft) must not be used.
+;; - Any license that is neither whitelisted nor blacklisted is treated as
+;;   greylisted and requires manual review.
+;;
+;; Add further usage buckets (:application, :container, :framework, ...)
+;; the same way to diverge from :default.
+{:default
+ {:whitelist #{"MIT"
+               "Apache-2.0"
+               "BSD-2-Clause"
+               "BSD-3-Clause"
+               "ISC"
+               "0BSD"
+               "Zlib"
+               "Unlicense"
+               "CC0-1.0"
+               "BSL-1.0"}
+
+  :blacklist #{;; Strong / network copyleft
+               "GPL-1.0-only" "GPL-1.0-or-later"
+               "GPL-2.0-only" "GPL-2.0-or-later"
+               "GPL-3.0-only" "GPL-3.0-or-later"
+               "AGPL-1.0-only" "AGPL-3.0-only" "AGPL-3.0-or-later"
+               ;; Weak / file-level copyleft
+               "LGPL-2.0-only" "LGPL-2.0-or-later"
+               "LGPL-2.1-only" "LGPL-2.1-or-later"
+               "LGPL-3.0-only" "LGPL-3.0-or-later"
+               "MPL-1.1" "MPL-2.0"
+               "EPL-1.0" "EPL-2.0"
+               "CDDL-1.0" "CDDL-1.1"
+               "EUPL-1.1" "EUPL-1.2"
+               ;; Copyleft-like, not OSI approved
+               "SSPL-1.0"}}
+
+ ;; Linked/bundled libraries carry the highest copyleft risk, so :library
+ ;; starts out close to :default -- except for file-based/weak copyleft
+ ;; (EPL, MPL, CDDL). Those licenses scope their reciprocal obligation to
+ ;; the licensed files themselves, not to "the work as a whole" the way
+ ;; GPL/AGPL do, so using them as an unmodified linked library does not
+ ;; require your own code to be released under the same license (this is
+ ;; why e.g. Clojure itself is EPL-1.0). This assumes the library's
+ ;; sources are NOT modified -- if you fork/patch one of these, treat it
+ ;; like a blacklisted copyleft license again.
+ :library
+ {:whitelist #{"MIT"
+               "Apache-2.0"
+               "BSD-2-Clause"
+               "BSD-3-Clause"
+               "ISC"
+               "0BSD"
+               "Zlib"
+               "Unlicense"
+               "CC0-1.0"
+               "BSL-1.0"
+               ;; File-based/weak copyleft, safe when linked unmodified
+               "EPL-1.0" "EPL-2.0"
+               "MPL-1.1" "MPL-2.0"
+               "CDDL-1.0" "CDDL-1.1"}
+
+  :blacklist #{"GPL-1.0-only" "GPL-1.0-or-later"
+               "GPL-2.0-only" "GPL-2.0-or-later"
+               "GPL-3.0-only" "GPL-3.0-or-later"
+               "AGPL-1.0-only" "AGPL-3.0-only" "AGPL-3.0-or-later"
+               "LGPL-2.0-only" "LGPL-2.0-or-later"
+               "LGPL-2.1-only" "LGPL-2.1-or-later"
+               "LGPL-3.0-only" "LGPL-3.0-or-later"
+               "EUPL-1.1" "EUPL-1.2"
+               "SSPL-1.0"}}}
