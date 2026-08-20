@@ -60,10 +60,11 @@ sbom-tool.bb -I sboms -r all-license -o json
 | `-f, --fail-on-violations`          | `false`    | Exit with status 1 if there are blacklisted licenses or policy-blocked vulnerabilities |
 | `-h, --help`                        | —          | Print usage                         |
 
-Disclaimer: The vulnerability reports rely on the information contained in the SBOM files and only report the vulnerabilities known at the time the SBOMs were created.
+**Disclaimer**: The vulnerability reports rely on the information contained in the SBOM files and only report the vulnerabilities known at the time the SBOMs were created.
 When the SBOMs do not contain vulnerability information, no vulnerabilities are reported -- which reads as "no known vulnerabilities" even though the truth is "no data".
 Because of this, the default report (`all-license`) omits vulnerability reports; request `all-vulnerabilities` or `all` explicitly once your SBOMs are known to carry vulnerability data.
-The SBOM Tool should not be treated as the only measure for vulnerability checks.
+
+**The SBOM Tool should not be treated as the only measure for vulnerability checks.**
 
 ### Policy files
 
