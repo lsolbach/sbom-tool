@@ -247,4 +247,4 @@
        (map read-json)
        (map cdx->sbom)
        (into [])
-       (swap! repo/state assoc :sboms)))
+       (swap! repo/state update :sboms (fnil into []))))

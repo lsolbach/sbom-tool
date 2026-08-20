@@ -9,13 +9,13 @@
     (let [markdown (markdown/render-report
                     :licenses
                     [{:id "pkg:mit@1" :name "mit-lib" :version "1" :component-type :library
-                      :licenses [{:license "MIT" :status :white}]}
+                      :licenses [{:license "MIT" :status :white}] :sources [:cyclonedx]}
                      {:id "pkg:gpl@1" :name "gpl-lib" :version "1" :component-type :library
-                      :licenses [{:license "GPL-3.0-only" :status :black}]}])]
+                      :licenses [{:license "GPL-3.0-only" :status :black}] :sources [:spdx]}])]
       (is (str/includes? markdown "## Licenses"))
-      (is (str/includes? markdown "| Component | Version | Type | Licenses |"))
-      (is (str/includes? markdown "| mit-lib | 1 | library | MIT (ok) |"))
-      (is (str/includes? markdown "| gpl-lib | 1 | library | GPL-3.0-only (blacklisted) |")))))
+      (is (str/includes? markdown "| Component | Version | Type | Licenses | Sources |"))
+      (is (str/includes? markdown "| mit-lib | 1 | library | MIT (ok) | cyclonedx |"))
+      (is (str/includes? markdown "| gpl-lib | 1 | library | GPL-3.0-only (blacklisted) | spdx |")))))
 
 (deftest render-license-summary-test
   (testing "renders a fixed-order status/count table, defaulting missing statuses to 0"
@@ -30,36 +30,40 @@
     (let [markdown (markdown/render-report
                     :multi-licensed
                     [{:id "pkg:dual@1" :name "dual-lib" :version "1"
-                      :licenses #{#{"MIT"} #{"Apache-2.0" "CC0-1.0"}}}])]
+                      :licenses #{#{"MIT"} #{"Apache-2.0" "CC0-1.0"}}
+                      :sources [:cyclonedx :spdx]}])]
       (is (or (str/includes? markdown "MIT OR (Apache-2.0 AND CC0-1.0)")
-              (str/includes? markdown "(Apache-2.0 AND CC0-1.0) OR MIT"))))))
+              (str/includes? markdown "(Apache-2.0 AND CC0-1.0) OR MIT")))
+      (is (str/includes? markdown "cyclonedx, spdx")))))
 
 (deftest render-unidentified-licenses-test
   (testing "renders the no-license and unidentified-license reasons as readable text"
     (let [markdown (markdown/render-report
                     :unidentified-licenses
-                    [{:id "pkg:a@1" :name "a" :version "1" :reason :no-license}
+                    [{:id "pkg:a@1" :name "a" :version "1" :reason :no-license :sources [:cyclonedx]}
                      {:id "pkg:b@1" :name "b" :version "1" :reason :unidentified-license
-                      :licenses #{{:license "LicenseRef-custom"}}}])]
-      (is (str/includes? markdown "| a | 1 | no license |  |"))
-      (is (str/includes? markdown "| b | 1 | unidentified license | LicenseRef-custom |"))))
+                      :licenses #{{:license "LicenseRef-custom"}} :sources [:spdx]}])]
+      (is (str/includes? markdown "| a | 1 | no license |  | cyclonedx |"))
+      (is (str/includes? markdown "| b | 1 | unidentified license | LicenseRef-custom | spdx |"))))
   (testing "appends the license URL, if any, for context"
     (let [markdown (markdown/render-report
                     :unidentified-licenses
                     [{:id "pkg:c@1" :name "c" :version "1" :reason :unidentified-license
                       :licenses #{{:license "Unknown - See URL"
-                                   :url "https://example.com/license"}}}])]
+                                   :url "https://example.com/license"}}
+                      :sources [:spdx]}])]
       (is (str/includes? markdown
-                          "| c | 1 | unidentified license | Unknown - See URL (see: https://example.com/license) |")))))
+                          "| c | 1 | unidentified license | Unknown - See URL (see: https://example.com/license) | spdx |")))))
 
 (deftest render-vulnerabilities-test
   (testing "joins each component's vulnerabilities inline with severity and status"
     (let [markdown (markdown/render-report
                     :vulnerabilities
                     [{:id "pkg:a@1" :name "a" :version "1" :component-type :library
-                      :vulnerabilities [{:id "CVE-1" :severity :high :status :blocked}]}])]
+                      :vulnerabilities [{:id "CVE-1" :severity :high :status :blocked}]
+                      :sources [:cyclonedx]}])]
       (is (str/includes? markdown "## Vulnerabilities"))
-      (is (str/includes? markdown "| a | 1 | library | CVE-1 (high, blocked) |")))))
+      (is (str/includes? markdown "| a | 1 | library | CVE-1 (high, blocked) | cyclonedx |")))))
 
 (deftest render-vulnerability-summary-test
   (testing "renders severities in a fixed most-to-least-severe order plus the affected count"

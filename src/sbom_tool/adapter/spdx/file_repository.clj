@@ -239,4 +239,4 @@
        (map read-json)
        (map spdx->sbom)
        (into [])
-       (swap! repo/state assoc :sboms)))
+       (swap! repo/state update :sboms (fnil into []))))

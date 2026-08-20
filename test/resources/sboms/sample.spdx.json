@@ -1,0 +1,31 @@
+{
+  "spdxVersion": "SPDX-2.2",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sample",
+  "documentNamespace": "https://example.com/sample",
+  "creationInfo": {
+    "created": "2026-01-01T00:00:00Z",
+    "creators": ["Tool: sbom-tool-test"]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-bar",
+      "name": "bar",
+      "versionInfo": "2.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-shared-lib",
+      "name": "shared-lib",
+      "versionInfo": "2.0",
+      "licenseConcluded": "MIT",
+      "licenseInfoFromFiles": ["Apache-2.0"],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/shared-lib@2.0"
+        }
+      ]
+    }
+  ]
+}

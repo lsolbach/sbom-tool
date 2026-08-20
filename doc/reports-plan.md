@@ -58,7 +58,8 @@ Reports to deliver:
   3.2 — since `affected` ids are only unique within one BOM document.)
 - `highest-severity [vulnerabilities]`.
 - `vulnerability-status [policy vulnerability]` → `:blocked` (severity ≥ policy `:max-severity`
-  and id not in `:ignored`), `:accepted` (in `:ignored`), or `:ok`.
+  and id not in `:ignored`, or its `:ignored` exemption has expired), `:accepted` (unexpired
+  entry in `:ignored`), or `:ok`.
 - `component-report [policy sbom component]` → id/name/version/type + per-vulnerability
   id/severity/status/description/source, analogous to `license/component-report`.
 
@@ -81,8 +82,12 @@ Reports to deliver:
   at repo root:
   ```clojure
   {:max-severity :high   ;; :critical and :high vulnerabilities fail the gate
-   :ignored #{}}         ;; accepted-risk vulnerability ids, exempted from failing
+   :ignored {}}          ;; accepted-risk vulnerability ids -> exemption metadata
   ```
+  `:ignored` maps a vulnerability id to an exemption carrying an optional `:justification`
+  (free text) and an optional `:expiry-date` (ISO-8601 date); once past, the exemption stops
+  applying and the vulnerability is evaluated normally again. A legacy bare id set is still
+  accepted, as a set of exemptions that never expire.
 - `adapter/policy/file_repository.clj` gets a second `defmethod repo/read-vulnerability-policies`
   reading this file, same fallback-to-bundled-default behavior as `read-policy-file`.
 - Kept as its own file/CLI flag rather than nesting under `license-policy.edn`, so the two
@@ -152,10 +157,9 @@ output-format keyword:
 
 - Default `:max-severity` for the bundled vulnerability policy — proposing `:high` (blocks
   `:high` and `:critical`, leaves `:medium`/`:low`/`:unknown` as informational).
-- Should the `:ignored` accepted-risk exemption support metadata (justification, expiry date)
-  rather than a bare id set? Mirrors a similar question for license policy (currently no
-  exemption mechanism for blacklisted licenses at all).
-- Is CSV/Markdown output actually needed now, or is EDN sufficient for current usage (e.g.
-  piped into another tool)? Affects whether phase 6 is worth doing immediately.
-- Should `--report all` emit one combined map (all report keys at once) for a single CI
-  artifact, in addition to selecting an individual report?
+- ~~Should the `:ignored` accepted-risk exemption support metadata (justification, expiry
+  date) rather than a bare id set?~~ **Resolved:** yes — `:ignored` is now a map of id to
+  exemption (`:justification`, `:expiry-date`), since a fix may simply not exist yet at build
+  time and the exemption should lapse once one is expected. A bare id set is still accepted for
+  backward compatibility, as exemptions that never expire. A similar question remains open for
+  license policy (currently no exemption mechanism for blacklisted licenses at all).

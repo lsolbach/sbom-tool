@@ -9,6 +9,7 @@
             [sbom-tool.adapter.spdx.file-repository :as spdx-repo]
             [sbom-tool.adapter.policy.file-repository :as policy-repo]
             [sbom-tool.adapter.markdown.report :as markdown-report]
+            [sbom-tool.adapter.json.report :as json-report]
             [sbom-tool.application.repository :as repo])
   (:gen-class))
 
@@ -44,16 +45,17 @@
   [["-I" "--input-path PATH" "Path of the SBOM folder" :default "sboms"]
    ["-l" "--license-policy PATH" "Path of the license policy file"]
    ["-V" "--vulnerability-policy PATH" "Path of the vulnerability policy file"]
-   ["-s" "--sbom-format FORMAT" "Format of the SBOMs" :default :cdx :parse-fn keyword]
+   ["-s" "--sbom-format FORMAT" "Format of the SBOMs: auto (both), cdx or spdx" :default :auto :parse-fn keyword]
+   ["-m" "--merge-unidentified" "Also merge components across documents that carry neither a purl nor a cpe, by name/version alone -- riskier, since unrelated packages can coincidentally share both across ecosystems"]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
     :default :licenses
     :parse-fn keyword
     :validate [(set (keys reports))
                (str "Must be one of: " (str/join ", " (map name (keys reports))))]]
-   ["-o" "--output-format FORMAT" "Output format: edn or markdown"
+   ["-o" "--output-format FORMAT" "Output format: edn, json or markdown"
     :default :edn
     :parse-fn keyword
-    :validate [#{:edn :markdown} "Must be one of: edn, markdown"]]
+    :validate [#{:edn :json :markdown} "Must be one of: edn, json, markdown"]]
    ["-f" "--fail-on-violations" "Exit with status 1 if there are blacklisted licenses or policy-blocked vulnerabilities"]
    ["-h" "--help" "Print help"]])
 
@@ -110,6 +112,7 @@
   "Initialize the program state."
   [options]
   ; TODO use destructuring
+  (swap! repo/state assoc :merge-unidentified? (:merge-unidentified options))
   (repo/read-sboms options (:input-path options))
   (repo/read-policies options (:license-policy options))
   (repo/read-vulnerability-policies options (:vulnerability-policy options)))
@@ -124,9 +127,9 @@
 (defn dispatch
   "Dispatch on options: prints the requested `--report`, defaulting to
    `licenses`, rendered in the requested `--output-format` (`:edn`, printed
-   as-is, or `:markdown`, rendered via `template/render`), and, when
-   `--fail-on-violations` is set, exits with status 1 if `violations?` is
-   true."
+   as-is, or `:json`/`:markdown`, rendered via `template/render`), and,
+   when `--fail-on-violations` is set, exits with status 1 if `violations?`
+   is true."
   [options]
   (let [report-key (:report options)
         report-fn (get reports report-key report/licenses)

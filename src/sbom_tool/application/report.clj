@@ -1,34 +1,50 @@
 (ns sbom-tool.application.report
   (:require [sbom-tool.application.repository :as repo]
+            [sbom-tool.domain.component :as component]
             [sbom-tool.domain.license :as license]
             [sbom-tool.domain.sbom :as sbom]
             [sbom-tool.domain.vulnerability :as vulnerability]))
 
+(defn- with-provenance
+  "Adds provenance to a component-based report `entry`: `:sources`, the
+   source document formats `component` was consolidated from, and, when
+   present, `:conflicts` -- the scalar fields its source documents
+   disagreed on (see `sbom-tool.domain.component/merge-components`)."
+  [component entry]
+  (cond-> (assoc entry :sources (component/origin-sources component))
+    (:conflicts component) (assoc :conflicts (:conflicts component))))
+
 (defn licenses
-  "Returns the license report for all components across all SBOMs: for each
-   component its id, name, version, type and its licenses with their
-   whitelist/blacklist status (:white, :black or :grey)."
+  "Returns the license report for all consolidated components (one per
+   real-world package, merging every source document's contribution --
+   see `sbom-tool.application.repository/consolidated-components`): each
+   entry's id, name, version, type and its licenses with their
+   whitelist/blacklist status (:white, :black or :grey), plus `:sources`
+   and, when the source documents disagreed, `:conflicts`."
   []
   (let [policies (repo/policies)]
-    (mapv (partial license/component-report policies) (repo/components))))
+    (mapv (fn [component]
+            (with-provenance component (license/component-report policies component)))
+          (repo/consolidated-components))))
 
 (defn multi-licensed
-  "Returns the components that are multi-licensed, i.e. that have more than
-   one license choice -- either because their declared/concluded/
-   from-files licenses disagree, or because a license expression offers
-   multiple alternatives via the disjunctive OR operator -- together with
-   the distinct choices. Each choice is the set of license ids that must
-   be satisfied together, which is more than one id when licenses are
-   combined via the conjunctive AND operator."
+  "Returns the consolidated components that are multi-licensed, i.e. that
+   have more than one license choice -- either because their declared/
+   concluded/from-files licenses disagree, or because a license
+   expression offers multiple alternatives via the disjunctive OR
+   operator -- together with the distinct choices. Each choice is the set
+   of license ids that must be satisfied together, which is more than one
+   id when licenses are combined via the conjunctive AND operator."
   []
-  (->> (repo/components)
+  (->> (repo/consolidated-components)
        (keep (fn [component]
                (let [choices (license/component-license-choices component)]
                  (when (> (count choices) 1)
-                   {:id (::sbom/id component)
-                    :name (::sbom/name component)
-                    :version (::sbom/version component)
-                    :licenses choices}))))
+                   (with-provenance component
+                     {:id (::sbom/id component)
+                      :name (::sbom/name component)
+                      :version (::sbom/version component)
+                      :licenses choices})))))
        vec))
 
 (defn license-summary
@@ -56,7 +72,7 @@
    so free-text names like \"Unknown - See URL\" remain traceable to the
    license terms they refer to."
   []
-  (->> (repo/components)
+  (->> (repo/consolidated-components)
        (keep (fn [component]
                (let [licenses (license/component-licenses component)
                      base {:id (::sbom/id component)
@@ -64,33 +80,37 @@
                            :version (::sbom/version component)}]
                  (cond
                    (empty? licenses)
-                   (assoc base :reason :no-license)
+                   (with-provenance component (assoc base :reason :no-license))
 
                    (not-any? license/spdx-identifiable? licenses)
-                   (assoc base
-                          :reason :unidentified-license
-                          :licenses (into #{}
-                                          (map (fn [license]
-                                                 {:license (license/license-identifier license)
-                                                  :url (license/license-url license)}))
-                                          licenses))))))
+                   (with-provenance component
+                     (assoc base
+                            :reason :unidentified-license
+                            :licenses (into #{}
+                                            (map (fn [license]
+                                                   {:license (license/license-identifier license)
+                                                    :url (license/license-url license)}))
+                                            licenses)))))))
        vec))
 
 (defn vulnerabilities-by-component
-  "Returns the vulnerability report for every component across all SBOMs
-   that has at least one vulnerability: its id, name, version, type and its
-   vulnerabilities with their policy status (:ok, :blocked or :accepted),
-   sorted by severity, most severe first."
+  "Returns the vulnerability report for every consolidated component that
+   has at least one vulnerability (resolved against every source document
+   it was assembled from, see `sbom-tool.domain.vulnerability/
+   consolidated-component-vulnerabilities`): its id, name, version, type,
+   `:sources`, and its vulnerabilities with their policy status (:ok,
+   :blocked or :accepted), sorted by severity, most severe first."
   []
   (let [policy (repo/vulnerability-policies)]
-    (->> (repo/sbom-components)
-         (keep (fn [[sbom component]]
-                 (let [report (vulnerability/component-report policy sbom component)]
+    (->> (repo/consolidated-components)
+         (keep (fn [component]
+                 (let [report (vulnerability/consolidated-component-report policy component)]
                    (when (seq (:vulnerabilities report))
-                     (update report :vulnerabilities
-                             (partial sort-by
-                                      (comp #(get vulnerability/severity-rank % -1) :severity)
-                                      >))))))
+                     (with-provenance component
+                       (update report :vulnerabilities
+                               (partial sort-by
+                                        (comp #(get vulnerability/severity-rank % -1) :severity)
+                                        >)))))))
          vec)))
 
 (defn vulnerability-summary

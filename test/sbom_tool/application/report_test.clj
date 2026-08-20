@@ -2,7 +2,10 @@
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [sbom-tool.application.repository :as repo]
             [sbom-tool.application.report :as report]
-            [sbom-tool.domain.sbom :as sbom]))
+            [sbom-tool.domain.sbom :as sbom]
+            ; initialize adapters (registers the :cdx/:spdx read-sboms methods)
+            [sbom-tool.adapter.cdx.file-repository]
+            [sbom-tool.adapter.spdx.file-repository]))
 
 (def mit-component
   #::sbom{:id "pkg:mit@1" :name "mit-lib" :version "1"
@@ -82,3 +85,17 @@
            {:max-severity :high :ignored #{"CVE-2024-0002"}})
     (is (= #{"CVE-2024-0001"}
            (into #{} (map :id) (report/blocked-vulnerabilities))))))
+
+(deftest consolidated-reports-e2e-test
+  (testing "a package described by both a CycloneDX and an SPDX file is reported once, with both sources"
+    (reset! repo/state {:policies license-policy :vulnerability-policies vulnerability-policy})
+    (repo/read-sboms {:sbom-format :auto} "test/resources/sboms")
+    (let [by-name (into {} (map (fn [e] [(:name e) e])) (report/licenses))
+          shared (get by-name "shared-lib")]
+      (is (= #{"foo" "bar" "shared-lib"} (set (keys by-name))))
+      (is (= #{:cyclonedx :spdx} (set (:sources shared))))
+      (is (some #(= "MIT" (:license %)) (:licenses shared))))
+    (let [by-name (into {} (map (fn [e] [(:name e) e])) (report/vulnerabilities-by-component))
+          shared (get by-name "shared-lib")]
+      (is (= #{"CVE-2024-9999"} (into #{} (map :id) (:vulnerabilities shared))))
+      (is (= #{:cyclonedx :spdx} (set (:sources shared)))))))

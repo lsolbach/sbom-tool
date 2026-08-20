@@ -51,13 +51,20 @@
     (str "(" (str/join " AND " (sort choice)) ")")
     (first choice)))
 
+(defn- format-sources
+  "Formats the source document formats (see `:sources` on a report entry)
+   as e.g. \"cyclonedx, spdx\"."
+  [sources]
+  (str/join ", " (map name sources)))
+
 (defn- render-licenses
   [data]
-  (md-table ["Component" "Version" "Type" "Licenses"]
+  (md-table ["Component" "Version" "Type" "Licenses" "Sources"]
             (for [entry data]
               [(:name entry) (:version entry)
                (some-> (:component-type entry) name)
-               (str/join "; " (map format-license-entry (:licenses entry)))])))
+               (str/join "; " (map format-license-entry (:licenses entry)))
+               (format-sources (:sources entry))])))
 
 (defn- render-license-summary
   [data]
@@ -67,10 +74,11 @@
 
 (defn- render-multi-licensed
   [data]
-  (md-table ["Component" "Version" "Choices"]
+  (md-table ["Component" "Version" "Choices" "Sources"]
             (for [entry data]
               [(:name entry) (:version entry)
-               (str/join " OR " (map format-choice (:licenses entry)))])))
+               (str/join " OR " (map format-choice (:licenses entry)))
+               (format-sources (:sources entry))])))
 
 (defn- format-unidentified-license
   [{:keys [license url]}]
@@ -80,22 +88,24 @@
 
 (defn- render-unidentified-licenses
   [data]
-  (md-table ["Component" "Version" "Reason" "Licenses"]
+  (md-table ["Component" "Version" "Reason" "Licenses" "Sources"]
             (for [entry data]
               [(:name entry) (:version entry)
                (case (:reason entry)
                  :no-license "no license"
                  :unidentified-license "unidentified license"
                  (name (:reason entry)))
-               (str/join "; " (map format-unidentified-license (:licenses entry)))])))
+               (str/join "; " (map format-unidentified-license (:licenses entry)))
+               (format-sources (:sources entry))])))
 
 (defn- render-vulnerabilities
   [data]
-  (md-table ["Component" "Version" "Type" "Vulnerabilities"]
+  (md-table ["Component" "Version" "Type" "Vulnerabilities" "Sources"]
             (for [entry data]
               [(:name entry) (:version entry)
                (some-> (:component-type entry) name)
-               (str/join "; " (map format-vulnerability-entry (:vulnerabilities entry)))])))
+               (str/join "; " (map format-vulnerability-entry (:vulnerabilities entry)))
+               (format-sources (:sources entry))])))
 
 (defn- render-vulnerability-summary
   [data]
