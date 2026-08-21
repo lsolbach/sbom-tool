@@ -4,8 +4,8 @@
             [sbom-tool.application.report :as report]
             [sbom-tool.domain.sbom :as sbom]
             ; initialize adapters (registers the :cdx/:spdx read-sboms methods)
-            [sbom-tool.adapter.cdx.file-repository]
-            [sbom-tool.adapter.spdx.file-repository]))
+            [sbom-tool.adapter.sbom.cdx]
+            [sbom-tool.adapter.spdx.spdx]))
 
 (def mit-component
   #::sbom{:id "pkg:mit@1" :name "mit-lib" :version "1"

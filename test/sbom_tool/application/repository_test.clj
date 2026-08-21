@@ -4,8 +4,8 @@
             [sbom-tool.domain.sbom :as sbom]
             [sbom-tool.domain.vulnerability :as vulnerability]
             ; initialize adapters (registers the :cdx/:spdx read-sboms methods)
-            [sbom-tool.adapter.cdx.file-repository]
-            [sbom-tool.adapter.spdx.file-repository]))
+            [sbom-tool.adapter.sbom.cdx]
+            [sbom-tool.adapter.sbom.spdx]))
 
 (def fixtures-path "test/resources/sboms")
 

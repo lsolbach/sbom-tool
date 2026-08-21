@@ -5,11 +5,11 @@
             [sbom-tool.application.report :as report]
             [sbom-tool.application.template :as template]
             ; initialize adapter
-            [sbom-tool.adapter.cdx.file-repository :as cdx-repo]
-            [sbom-tool.adapter.spdx.file-repository :as spdx-repo]
+            [sbom-tool.adapter.sbom.cdx :as cdx-repo]
+            [sbom-tool.adapter.sbom.spdx :as spdx-repo]
             [sbom-tool.adapter.policy.file-repository :as policy-repo]
-            [sbom-tool.adapter.markdown.report :as markdown-report]
-            [sbom-tool.adapter.json.report :as json-report]
+            [sbom-tool.adapter.report.markdown :as markdown-report]
+            [sbom-tool.adapter.report.json :as json-report]
             [sbom-tool.application.repository :as repo])
   (:gen-class))
 

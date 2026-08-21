@@ -1,4 +1,4 @@
-(ns sbom-tool.adapter.json.report
+(ns sbom-tool.adapter.report.json
   "Renders `sbom-tool.application.report` reports as JSON. Unlike markdown,
    JSON needs no per-report template: report data is already plain
    maps/vectors, so it is serialized generically regardless of `report-key`."

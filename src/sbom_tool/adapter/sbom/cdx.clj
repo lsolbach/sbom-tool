@@ -1,4 +1,4 @@
-(ns sbom-tool.adapter.cdx.file-repository
+(ns sbom-tool.adapter.sbom.cdx
   (:require [cheshire.core :as json]
             [babashka.fs :as fs]
             [sbom-tool.application.repository :as repo]

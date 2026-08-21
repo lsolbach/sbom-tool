@@ -1,4 +1,4 @@
-(ns sbom-tool.adapter.markdown.report
+(ns sbom-tool.adapter.report.markdown
   "Renders `sbom-tool.application.report` reports as markdown. A hand-rolled
    renderer per report shape for now; a future template-engine-based
    adapter (e.g. using comb, as in Overarch) can replace this without any
