@@ -21,7 +21,7 @@ java -jar target/sbom-tool.jar -I sboms -l example-license-policy.edn
 Or run with [babashka](https://babashka.org/):
 
 ```
-sbom-tool.bb -I sboms -l example-license-policy.edn
+sbom-tool -I sboms -l example-license-policy.edn
 ```
 
 To gate a CI pipeline on blacklisted licenses or policy-blocked vulnerabilities, add
@@ -29,7 +29,7 @@ To gate a CI pipeline on blacklisted licenses or policy-blocked vulnerabilities,
 which `--report` was requested):
 
 ```
-sbom-tool.bb -I sboms \
+sbom-tool -I sboms \
    -l example-license-policy.edn -V example-vulnerability-policy.edn \
    -r all --fail-on-violations
 ```
@@ -37,13 +37,13 @@ sbom-tool.bb -I sboms \
 For a human-readable summary (e.g. to paste into a PR or CI job summary), render as markdown:
 
 ```
-sbom-tool.bb -I sboms -r all-license -o markdown
+sbom-tool -I sboms -r all-license -o markdown
 ```
 
 Or, for consumption by other tooling, render as JSON:
 
 ```
-sbom-tool.bb -I sboms -r all-license -o json
+sbom-tool -I sboms -r all-license -o json
 ```
 
 ### Options
