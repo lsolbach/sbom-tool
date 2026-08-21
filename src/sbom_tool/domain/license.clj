@@ -3,6 +3,8 @@
   (:require [clojure.string :as string]
             [sbom-tool.domain.sbom :as sbom]))
 
+;; TODO add spec for license policies
+
 (defn license-identifier
   "Returns the identifying string of `license`, preferring its SPDX id
    over its plain name."
