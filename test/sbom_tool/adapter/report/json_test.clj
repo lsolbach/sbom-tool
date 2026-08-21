@@ -1,7 +1,7 @@
 (ns sbom-tool.adapter.report.json-test
   (:require [cheshire.core :as json]
             [clojure.test :refer [deftest is testing]]
-            [sbom-tool.adapter.json.json]
+            [sbom-tool.adapter.report.json]
             [sbom-tool.application.template :as template]))
 
 (deftest template-render-dispatch-test

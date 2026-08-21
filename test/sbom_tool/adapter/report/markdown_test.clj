@@ -1,7 +1,7 @@
 (ns sbom-tool.adapter.report.markdown-test
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
-            [sbom-tool.adapter.markdown.markdown :as markdown]
+            [sbom-tool.adapter.report.markdown :as markdown]
             [sbom-tool.application.template :as template]))
 
 (deftest render-licenses-test
