@@ -123,3 +123,4 @@
   [options path]
   (read-sboms (assoc options :sbom-format :cdx) path)
   (read-sboms (assoc options :sbom-format :spdx) path))
+

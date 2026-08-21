@@ -1,4 +1,4 @@
-(ns sbom-tool.adapter.policy.file-repository
+(ns sbom-tool.adapter.policies
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [sbom-tool.application.repository :as repo]))

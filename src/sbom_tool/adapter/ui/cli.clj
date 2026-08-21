@@ -7,7 +7,7 @@
             ; initialize adapter
             [sbom-tool.adapter.sbom.cdx :as cdx-repo]
             [sbom-tool.adapter.sbom.spdx :as spdx-repo]
-            [sbom-tool.adapter.policy.file-repository :as policy-repo]
+            [sbom-tool.adapter.policies :as policy-repo]
             [sbom-tool.adapter.report.markdown :as markdown-report]
             [sbom-tool.adapter.report.json :as json-report]
             [sbom-tool.application.repository :as repo])
