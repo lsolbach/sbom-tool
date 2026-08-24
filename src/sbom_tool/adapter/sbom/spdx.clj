@@ -14,9 +14,18 @@
 (defn read-json
   "Returns the data of the JSON file with the given `filename`."
   [filename]
-  (-> filename
-      (slurp)
-      (json/parse-string keyword)))
+  (try
+    (-> filename (slurp) (json/parse-string keyword))
+    (catch java.io.FileNotFoundException e
+      (let [msg (str "file not found: " filename)]
+        (throw (ex-info msg
+                         {:sbom-tool/error-type :sbom-file-not-found :path filename}
+                         e))))
+    (catch com.fasterxml.jackson.core.JsonProcessingException e
+      (let [msg (str "malformed JSON: " (ex-message e))]
+        (throw (ex-info msg
+                         {:sbom-tool/error-type :malformed-sbom-json :path filename}
+                         e))))))
 
 (def ^:private not-asserted?
   "SPDX placeholder values meaning \"no value was asserted\"."
