@@ -1,9 +1,20 @@
 (ns sbom-tool.domain.license
   "Pure domain logic for evaluating and classifying component licenses."
-  (:require [clojure.string :as string]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.string :as string]
             [sbom-tool.domain.sbom :as sbom]))
 
-;; TODO add spec for license policies
+(s/def ::whitelist (s/coll-of ::sbom/non-empty-string :kind set?))
+(s/def ::blacklist (s/coll-of ::sbom/non-empty-string :kind set?))
+
+(s/def ::type-policy
+  (s/keys :opt-un [::whitelist ::blacklist]))
+
+(s/def ::policy-key
+  (s/or :default #{:default} :component-type ::sbom/component-type))
+
+(s/def ::policies
+  (s/map-of ::policy-key ::type-policy))
 
 (defn license-identifier
   "Returns the identifying string of `license`, preferring its SPDX id
