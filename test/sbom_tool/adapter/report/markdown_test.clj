@@ -5,17 +5,41 @@
             [sbom-tool.application.template :as template]))
 
 (deftest render-licenses-test
-  (testing "renders one table row per component, with license/status pairs joined inline"
+  (testing "renders one table row per component, with explicit license id/name/status columns"
     (let [markdown (markdown/render-report
                     :licenses
                     [{:id "pkg:mit@1" :name "mit-lib" :version "1" :component-type :library
-                      :licenses [{:license "MIT" :status :white}] :sources [:cyclonedx]}
+                      :licenses [{:license-id "MIT" :license-name "MIT License" :status :white}]
+                      :sources [:cyclonedx]}
                      {:id "pkg:gpl@1" :name "gpl-lib" :version "1" :component-type :library
-                      :licenses [{:license "GPL-3.0-only" :status :black}] :sources [:spdx]}])]
+                      :licenses [{:license-id "GPL-3.0-only" :license-name nil :status :black}] :sources [:spdx]}])]
       (is (str/includes? markdown "## Licenses"))
-      (is (str/includes? markdown "| Component | Version | Type | Licenses | Sources |"))
-      (is (str/includes? markdown "| mit-lib | 1 | library | MIT (ok) | cyclonedx |"))
-      (is (str/includes? markdown "| gpl-lib | 1 | library | GPL-3.0-only (blacklisted) | spdx |")))))
+      (is (str/includes? markdown "| Component | Version | Type | License ID | License Name | Status | Sources |"))
+      (is (str/includes? markdown "| mit-lib | 1 | library | MIT | MIT License | ok | cyclonedx |"))
+      (testing "an entry with no resolved :license-name falls back to its :license-id"
+        (is (str/includes? markdown "| gpl-lib | 1 | library | GPL-3.0-only | GPL-3.0-only | blacklisted | spdx |")))))
+  (testing "renders a single blank-license row for a component with no licenses at all"
+    (let [markdown (markdown/render-report
+                    :licenses
+                    [{:id "pkg:none@1" :name "none-lib" :version "1" :component-type :library
+                      :licenses [] :sources [:cyclonedx]}])]
+      (is (str/includes? markdown "| none-lib | 1 | library |  |  |  | cyclonedx |"))))
+  (testing "links the license name to its :license-url, when known"
+    (let [markdown (markdown/render-report
+                    :licenses
+                    [{:id "pkg:mit@1" :name "mit-lib" :version "1" :component-type :library
+                      :licenses [{:license-id "MIT" :license-name "MIT License"
+                                  :license-url "https://spdx.org/licenses/MIT.html" :status :white}]
+                      :sources [:cyclonedx]}])]
+      (is (str/includes? markdown "[MIT License](https://spdx.org/licenses/MIT.html)"))))
+  (testing "renders the plain name, not a broken link, when :license-url is absent"
+    (let [markdown (markdown/render-report
+                    :licenses
+                    [{:id "pkg:mit@1" :name "mit-lib" :version "1" :component-type :library
+                      :licenses [{:license-id "MIT" :license-name "MIT License" :status :white}]
+                      :sources [:cyclonedx]}])]
+      (is (str/includes? markdown "| mit-lib | 1 | library | MIT | MIT License | ok | cyclonedx |"))
+      (is (not (str/includes? markdown "["))))))
 
 (deftest render-license-status-summary-test
   (testing "renders a fixed-order status/count table, defaulting missing statuses to 0"
@@ -35,15 +59,21 @@
       (is (< (str/index-of markdown "Apache-2.0") (str/index-of markdown "| MIT"))))))
 
 (deftest render-multi-licensed-test
-  (testing "joins choices with OR and conjunctive choices with AND"
+  (testing "renders one row per choice, joining a choice's conjunctive (AND) entries within each column"
     (let [markdown (markdown/render-report
                     :multi-licensed
                     [{:id "pkg:dual@1" :name "dual-lib" :version "1"
-                      :licenses #{#{"MIT"} #{"Apache-2.0" "CC0-1.0"}}
+                      :licenses #{#{{:license-id "MIT" :license-name "MIT License"
+                                     :license-url "https://spdx.org/licenses/MIT.html" :status :white}}
+                                  #{{:license-id "Apache-2.0" :license-name nil :status :white}
+                                    {:license-id "CC0-1.0" :license-name "Creative Commons Zero v1.0 Universal" :status :white}}}
                       :sources [:cyclonedx :spdx]}])]
-      (is (or (str/includes? markdown "MIT OR (Apache-2.0 AND CC0-1.0)")
-              (str/includes? markdown "(Apache-2.0 AND CC0-1.0) OR MIT")))
-      (is (str/includes? markdown "cyclonedx, spdx")))))
+      (is (str/includes? markdown "## Multi-licensed Components"))
+      (is (str/includes? markdown "| Component | Version | License ID | License Name | Status | Sources |"))
+      (testing "a single-entry choice links its name to its URL, when known"
+        (is (str/includes? markdown "| dual-lib | 1 | MIT | [MIT License](https://spdx.org/licenses/MIT.html) | ok | cyclonedx, spdx |")))
+      (is (str/includes? markdown
+                          "| dual-lib | 1 | Apache-2.0 AND CC0-1.0 | Apache-2.0 AND Creative Commons Zero v1.0 Universal | ok AND ok | cyclonedx, spdx |")))))
 
 (deftest render-unidentified-licenses-test
   (testing "renders the no-license and unidentified-license reasons as readable text"
@@ -51,18 +81,23 @@
                     :unidentified-licenses
                     [{:id "pkg:a@1" :name "a" :version "1" :reason :no-license :sources [:cyclonedx]}
                      {:id "pkg:b@1" :name "b" :version "1" :reason :unidentified-license
-                      :licenses #{{:license "LicenseRef-custom"}} :sources [:spdx]}])]
-      (is (str/includes? markdown "| a | 1 | no license |  | cyclonedx |"))
-      (is (str/includes? markdown "| b | 1 | unidentified license | LicenseRef-custom | spdx |"))))
-  (testing "appends the license URL, if any, for context"
+                      :licenses #{{:license-id "LicenseRef-custom" :license-name nil :status :grey}}
+                      :sources [:spdx]}])]
+      (is (str/includes? markdown "## Unidentified Licenses"))
+      (is (str/includes? markdown
+                          "| Component | Version | Reason | License ID | License Name | Status | URL | Sources |"))
+      (is (str/includes? markdown "| a | 1 | no license |  |  |  |  | cyclonedx |"))
+      (testing "an entry with no resolved :license-name falls back to its :license-id"
+        (is (str/includes? markdown "| b | 1 | unidentified license | LicenseRef-custom | LicenseRef-custom | review |  | spdx |")))))
+  (testing "includes the license's own declared :url in its own column -- distinct from :license-url, the SPDX reference link"
     (let [markdown (markdown/render-report
                     :unidentified-licenses
                     [{:id "pkg:c@1" :name "c" :version "1" :reason :unidentified-license
-                      :licenses #{{:license "Unknown - See URL"
+                      :licenses #{{:license-id "Unknown - See URL" :license-name nil :status :grey
                                    :url "https://example.com/license"}}
                       :sources [:spdx]}])]
       (is (str/includes? markdown
-                          "| c | 1 | unidentified license | Unknown - See URL (see: https://example.com/license) | spdx |")))))
+                          "| c | 1 | unidentified license | Unknown - See URL | Unknown - See URL | review | https://example.com/license | spdx |")))))
 
 (deftest render-vulnerabilities-test
   (testing "joins each component's vulnerabilities inline with severity and status"

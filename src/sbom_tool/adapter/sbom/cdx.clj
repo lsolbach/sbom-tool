@@ -10,6 +10,15 @@
   (->> (fs/glob path "**{.cdx.json}")
        (map str)))
 
+(def ^:private json-processing-exception-class
+  "Resolved via `Class/forName` rather than referenced as a `catch` class
+   literal, so this namespace also loads under babashka: its SCI
+   interpreter cannot resolve `com.fasterxml.jackson.core.
+   JsonProcessingException` as a catch clause at analysis time, even
+   though the class itself is present at runtime (babashka's `cheshire`
+   is backed by real Jackson)."
+  (Class/forName "com.fasterxml.jackson.core.JsonProcessingException"))
+
 (defn read-json
   "Returns the data of the JSON file with the given `filename`."
   [filename]
@@ -20,11 +29,13 @@
         (throw (ex-info msg
                          {:sbom-tool/error-type :sbom-file-not-found :path filename}
                          e))))
-    (catch com.fasterxml.jackson.core.JsonProcessingException e
-      (let [msg (str "malformed JSON: " (ex-message e))]
-        (throw (ex-info msg
-                         {:sbom-tool/error-type :malformed-sbom-json :path filename}
-                         e))))))
+    (catch Exception e
+      (if (instance? json-processing-exception-class e)
+        (let [msg (str "malformed JSON: " (ex-message e))]
+          (throw (ex-info msg
+                           {:sbom-tool/error-type :malformed-sbom-json :path filename}
+                           e)))
+        (throw e)))))
 
 (def ^:private hash-algorithms
   "Maps CycloneDX hash algorithm names to canonical hash algorithms."
@@ -252,8 +263,12 @@
 
 (defmethod repo/read-sboms :cdx
   [_options path]
-  (->> (cdx-files path)
-       (map read-json)
-       (map cdx->sbom)
-       (into [])
-       (swap! repo/state update :sboms (fnil into []))))
+  (let [files (cdx-files path)]
+    (when (empty? files)
+      (binding [*out* *err*]
+        (println (str "Warning: no *.cdx.json files found under " path))))
+    (->> files
+         (map read-json)
+         (map cdx->sbom)
+         (into [])
+         (swap! repo/state update :sboms (fnil into [])))))

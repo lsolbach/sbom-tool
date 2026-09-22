@@ -19,12 +19,14 @@
    real-world package, merging every source document's contribution --
    see `sbom-tool.application.repository/consolidated-components`): each
    entry's id, name, version, type and its licenses with their
-   whitelist/blacklist status (:white, :black or :grey), plus `:sources`
-   and, when the source documents disagreed, `:conflicts`."
+   whitelist/blacklist status (:white, :black or :grey) and, when
+   resolvable, their SPDX-canonical `:name`, plus `:sources` and, when the
+   source documents disagreed, `:conflicts`."
   []
-  (let [policies (repo/policies)]
+  (let [policies (repo/policies)
+        spdx-licenses (repo/spdx-licenses)]
     (mapv (fn [component]
-            (with-provenance component (license/component-report policies component)))
+            (with-provenance component (license/component-report policies spdx-licenses component)))
           (repo/consolidated-components))))
 
 (defn multi-licensed
@@ -33,19 +35,28 @@
    concluded/from-files licenses disagree, or because a license
    expression offers multiple alternatives via the disjunctive OR
    operator -- together with the distinct choices. Each choice is the set
-   of license ids that must be satisfied together, which is more than one
-   id when licenses are combined via the conjunctive AND operator."
+   of `license/license-entry`s (same shape as `licenses`' per-license
+   entries) that must be satisfied together, which is more than one entry
+   when licenses are combined via the conjunctive AND operator."
   []
-  (->> (repo/consolidated-components)
-       (keep (fn [component]
-               (let [choices (license/component-license-choices component)]
-                 (when (> (count choices) 1)
-                   (with-provenance component
-                     {:id (::sbom/id component)
-                      :name (::sbom/name component)
-                      :version (::sbom/version component)
-                      :licenses choices})))))
-       vec))
+  (let [policies (repo/policies)
+        spdx-licenses (repo/spdx-licenses)]
+    (->> (repo/consolidated-components)
+         (keep (fn [component]
+                 (let [choices (license/component-license-choices component)]
+                   (when (> (count choices) 1)
+                     (let [policy (license/policy-for policies (::sbom/component-type component))]
+                       (with-provenance component
+                         {:id (::sbom/id component)
+                          :name (::sbom/name component)
+                          :version (::sbom/version component)
+                          :licenses (into #{}
+                                          (map (fn [choice]
+                                                 (into #{}
+                                                       (map (partial license/license-entry policy spdx-licenses))
+                                                       choice)))
+                                          choices)}))))))
+         vec)))
 
 (defn license-status-summary
   "Returns the count of licenses per policy status (:white, :black, :grey)
@@ -62,7 +73,7 @@
   []
   (->> (licenses)
        (mapcat :licenses)
-       (map :license)
+       (map :license-id)
        frequencies))
 
 (defn blacklisted-licenses
@@ -77,30 +88,35 @@
   "Returns the components that either have no license information at all,
    or whose licenses could not be resolved to a standard SPDX license
    identifier (free-text license names, or custom LicenseRef- ids). For
-   the latter, each license is reported together with its URL, if any,
-   so free-text names like \"Unknown - See URL\" remain traceable to the
-   license terms they refer to."
+   the latter, each license is a `license/license-entry` (same shape as
+   `licenses`' per-license entries) plus its `:url`, if any, so free-text
+   names like \"Unknown - See URL\" remain traceable to the license terms
+   they refer to."
   []
-  (->> (repo/consolidated-components)
-       (keep (fn [component]
-               (let [licenses (license/component-licenses component)
-                     base {:id (::sbom/id component)
-                           :name (::sbom/name component)
-                           :version (::sbom/version component)}]
-                 (cond
-                   (empty? licenses)
-                   (with-provenance component (assoc base :reason :no-license))
+  (let [policies (repo/policies)
+        spdx-licenses (repo/spdx-licenses)]
+    (->> (repo/consolidated-components)
+         (keep (fn [component]
+                 (let [licenses (license/component-licenses component)
+                       policy (license/policy-for policies (::sbom/component-type component))
+                       base {:id (::sbom/id component)
+                             :name (::sbom/name component)
+                             :version (::sbom/version component)}]
+                   (cond
+                     (empty? licenses)
+                     (with-provenance component (assoc base :reason :no-license))
 
-                   (not-any? license/spdx-identifiable? licenses)
-                   (with-provenance component
-                     (assoc base
-                            :reason :unidentified-license
-                            :licenses (into #{}
-                                            (map (fn [license]
-                                                   {:license (license/license-identifier license)
-                                                    :url (license/license-url license)}))
-                                            licenses)))))))
-       vec))
+                     (not-any? license/spdx-identifiable? licenses)
+                     (with-provenance component
+                       (assoc base
+                              :reason :unidentified-license
+                              :licenses (into #{}
+                                              (map (fn [lic]
+                                                     (assoc (license/license-entry
+                                                             policy spdx-licenses (license/license-identifier lic))
+                                                            :url (license/license-url lic))))
+                                              licenses)))))))
+         vec)))
 
 (defn vulnerabilities-by-component
   "Returns the vulnerability report for every consolidated component that

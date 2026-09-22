@@ -9,4 +9,9 @@
     (is (= :sbom-file-not-found
            (:sbom-tool/error-type
             (ex-data (try (cdx/read-json "test/resources/sboms/no-such-file.cdx.json")
+                          (catch clojure.lang.ExceptionInfo e e)))))))
+  (testing "malformed JSON raises an ex-info tagged :malformed-sbom-json"
+    (is (= :malformed-sbom-json
+           (:sbom-tool/error-type
+            (ex-data (try (cdx/read-json "test/resources/sboms/malformed.json")
                           (catch clojure.lang.ExceptionInfo e e))))))))

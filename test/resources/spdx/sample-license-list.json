@@ -1,0 +1,19 @@
+{
+  "licenseListVersion": "3.29.0",
+  "licenses": [
+    {
+      "licenseId": "MIT",
+      "name": "MIT License",
+      "reference": "https://spdx.org/licenses/MIT.html",
+      "isDeprecatedLicenseId": false,
+      "isOsiApproved": true
+    },
+    {
+      "licenseId": "AGPL-1.0",
+      "name": "Affero General Public License v1.0",
+      "reference": "https://spdx.org/licenses/AGPL-1.0.html",
+      "isDeprecatedLicenseId": true,
+      "isOsiApproved": false
+    }
+  ]
+}

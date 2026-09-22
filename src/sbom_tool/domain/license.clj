@@ -52,19 +52,56 @@
     (contains? (:blacklist policy) identifier) :black
     :else :grey))
 
+(defn spdx-license-name
+  "Returns the SPDX-canonical name for `identifier` (e.g. \"MIT License\"
+   for \"MIT\") from `spdx-licenses` -- a map of license id to license
+   list info, as returned by
+   `sbom-tool.adapter.license.spdx/read-license-list` -- or nil if
+   `identifier` isn't a single id directly present in it (e.g. a compound
+   AND/OR expression, a custom `LicenseRef-` id, or `spdx-licenses` itself
+   is nil because no license list was loaded)."
+  [spdx-licenses identifier]
+  (get-in spdx-licenses [identifier :name]))
+
+(defn spdx-license-url
+  "Returns the URL of `identifier`'s official SPDX license detail page
+   (e.g. \"https://spdx.org/licenses/MIT.html\" for \"MIT\") from
+   `spdx-licenses`, under the same resolution rules as
+   `spdx-license-name` (nil for a compound expression, a custom
+   `LicenseRef-` id, or when no license list was loaded)."
+  [spdx-licenses identifier]
+  (get-in spdx-licenses [identifier :license-url]))
+
+(defn license-entry
+  "Returns the explicit report entry for `identifier` under `policy`,
+   given the loaded `spdx-licenses`: `:license-id` (`identifier` itself),
+   `:license-name` (see `spdx-license-name`, nil when unresolved),
+   `:license-url` (see `spdx-license-url`, nil under the same
+   conditions -- not to be confused with a license's own `:url`, its
+   declared URL from the SBOM document itself, added separately by
+   `sbom-tool.application.report/unidentified-licenses`) and `:status`
+   (see `license-status`). This is the entry shape shared by every
+   component-level license report (`component-report`, and
+   `sbom-tool.application.report`'s `multi-licensed` and
+   `unidentified-licenses`)."
+  [policy spdx-licenses identifier]
+  {:license-id identifier
+   :license-name (spdx-license-name spdx-licenses identifier)
+   :license-url (spdx-license-url spdx-licenses identifier)
+   :status (license-status policy identifier)})
+
 (defn component-report
-  "Returns the license report for a single `component`, given `policies`."
-  [policies component]
+  "Returns the license report for a single `component`, given `policies`.
+   Each license entry is a `license-entry`, given the component's own
+   usage-specific policy (see `policy-for`)."
+  [policies spdx-licenses component]
   (let [policy (policy-for policies (::sbom/component-type component))]
     {:id (::sbom/id component)
      :name (::sbom/name component)
      :version (::sbom/version component)
      :component-type (::sbom/component-type component)
      :licenses (into []
-                      (map (fn [license]
-                             (let [identifier (license-identifier license)]
-                               {:license identifier
-                                :status (license-status policy identifier)})))
+                      (map (comp (partial license-entry policy spdx-licenses) license-identifier))
                       (component-licenses component))}))
 
 (def ^:private license-expression-token-re

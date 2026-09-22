@@ -55,10 +55,26 @@ sbom-tool -I sboms -r all-license -o json
 | `-m, --merge-unidentified`          | `false`    | Also merge components across documents that carry neither a purl nor a cpe, by name/version alone (see "Multi-format consolidation" below) |
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
+| `-L, --spdx-license-list PATH`      | —          | SPDX license list JSON file (`json/licenses.json` from [spdx/license-list-data](https://github.com/spdx/license-list-data)); falls back to a bundled snapshot |
 | `-r, --report REPORT`               | `all-license` | Report to generate: `licenses`, `license-status-summary`, `license-summary`, `multi-licensed`, `unidentified-licenses`, `blacklisted-licenses`, `vulnerabilities`, `vulnerability-summary`, `blocked-vulnerabilities`, `all-license` (every license report), `all-vulnerabilities` (every vulnerability report) or `all` (both) |
 | `-o, --output-format FORMAT`        | `edn`      | Output format: `edn`, `json` or `markdown` |
 | `-f, --fail-on-violations`          | `false`    | Exit with status 1 if there are blacklisted licenses or policy-blocked vulnerabilities |
+| `-d, --debug`                       | `false`    | On failure, append the full exception cause chain to the error message, for troubleshooting |
 | `-h, --help`                        | —          | Print usage                         |
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Success |
+| `1`  | A CLI usage error (bad/missing arguments, `--help`), or `--fail-on-violations` found a blacklisted license or a policy-blocked vulnerability |
+| `2`  | A runtime/data error: an SBOM or policy file could not be read or parsed, or a report could not be rendered |
+
+### Troubleshooting
+
+If the tool exits with a message you don't understand, rerun with `-d`/`--debug` to append
+the full exception cause chain (down to the original I/O or parse error) to the printed
+message.
 
 **Disclaimer**: The vulnerability reports rely on the information contained in the SBOM files and only report the vulnerabilities known at the time the SBOMs were created.
 When the SBOMs do not contain vulnerability information, no vulnerabilities are reported -- which reads as "no known vulnerabilities" even though the truth is "no data".
@@ -92,6 +108,22 @@ entry), each with:
   date); once past, the exemption stops applying and the vulnerability is evaluated normally
   again. A legacy bare id set (e.g. `#{"CVE-2021-12345"}`) is still accepted, as exemptions that
   never expire.
+
+### SPDX license list
+
+Each license in a `licenses` report entry carries four explicit fields: `:license-id` (its raw
+identifier, e.g. `"MIT"`), `:license-name` (its SPDX-canonical name, e.g. `"MIT License"`),
+`:license-url` (the official SPDX license detail page, e.g.
+`"https://spdx.org/licenses/MIT.html"`) and `:status` (its whitelist/blacklist status).
+`:license-name`/`:license-url` are resolved against the SPDX license list (`json/licenses.json`
+from [spdx/license-list-data](https://github.com/spdx/license-list-data)) whenever `:license-id`
+is a single id directly recognized by it, and are `nil` otherwise -- e.g. for a compound
+`AND`/`OR` expression or a custom `LicenseRef-` id, neither of which has a single canonical name
+or detail page. A snapshot of the list ships bundled with the tool; pass `-L`/`--spdx-license-list`
+to use a different (e.g. newer) one instead.
+
+In the `markdown` output format, the License Name column links to `:license-url` when known, so a
+reader can click straight through to the license text.
 
 ### Multi-format consolidation
 

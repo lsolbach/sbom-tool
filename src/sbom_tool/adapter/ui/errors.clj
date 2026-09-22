@@ -40,6 +40,14 @@
   [ex]
   (str "Could not render the report: " (ex-message ex)))
 
+(defmethod friendly-message :spdx-license-list-not-found
+  [ex]
+  (str "Could not read the SPDX license list file " (:path (ex-data ex)) ": " (ex-message ex)))
+
+(defmethod friendly-message :malformed-spdx-license-list
+  [ex]
+  (str "The SPDX license list file " (:path (ex-data ex)) " is not valid JSON: " (ex-message ex)))
+
 (defmethod friendly-message ::unknown
   [ex]
   (str "An unexpected error occurred: " (ex-message ex)))

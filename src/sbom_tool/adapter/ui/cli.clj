@@ -4,9 +4,11 @@
             [clojure.tools.cli :as cli]
             [sbom-tool.application.report :as report]
             [sbom-tool.application.template :as template]
+            [sbom-tool.adapter.ui.errors :as errors]
             ; initialize adapter
             [sbom-tool.adapter.sbom.cdx :as cdx-repo]
             [sbom-tool.adapter.sbom.spdx :as spdx-repo]
+            [sbom-tool.adapter.license.spdx :as spdx-license-repo]
             [sbom-tool.adapter.policies :as policy-repo]
             [sbom-tool.adapter.report.markdown :as markdown-report]
             [sbom-tool.adapter.report.json :as json-report]
@@ -63,6 +65,7 @@
   [["-I" "--input-path PATH" "Path of the SBOM folder" :default "sboms"]
    ["-l" "--license-policy PATH" "Path of the license policy file"]
    ["-V" "--vulnerability-policy PATH" "Path of the vulnerability policy file"]
+   ["-L" "--spdx-license-list PATH" "Path of an SPDX license list JSON file (json/licenses.json from spdx/license-list-data); falls back to the bundled snapshot"]
    ["-s" "--sbom-format FORMAT" "Format of the SBOMs: auto (both), cdx or spdx" :default :auto :parse-fn keyword]
    ["-m" "--merge-unidentified" "Also merge components across documents that carry neither a purl nor a cpe, by name/version alone -- riskier, since unrelated packages can coincidentally share both across ecosystems"]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
@@ -75,20 +78,17 @@
     :parse-fn keyword
     :validate [#{:edn :json :markdown} "Must be one of: edn, json, markdown"]]
    ["-f" "--fail-on-violations" "Exit with status 1 if there are blacklisted licenses or policy-blocked vulnerabilities"]
+   ["-d" "--debug" "Print full exception details on failure, for troubleshooting"]
    ["-h" "--help" "Print help"]])
 
 (defn usage-msg
   "Returns a message containing the program usage."
-  ([summary]
-   (usage-msg (str "java --jar " appname ".jar [options]") "" summary))
-  ([name summary]
-   (usage-msg name "" summary))
-  ([name description summary]
-   (str/join "\n\n"
-             [description
-              (str "Usage: java -jar " name ".jar [options].")
-              "Options:"
-              summary])))
+  [name description summary]
+  (str/join "\n\n"
+            [description
+             (str "Usage: java -jar " name " [options].")
+             "Options:"
+             summary]))
 
 (defn error-msg
   "Returns a message containing the parsing errors."
@@ -122,9 +122,7 @@
         :else ; failed custom validation => exit with usage summary
         {:exit-message (usage-msg appname description summary)}))
     (catch Exception e
-      (println "Error validating the CLI arguments" args ".")
-      (println (ex-message e))
-      (.printStacktrace e))))
+      {:exit-message (str "Error validating the CLI arguments " args ".\n" (ex-message e))})))
 
 (defn initialize-state
   "Initialize the program state."
@@ -133,7 +131,9 @@
   (swap! repo/state assoc :merge-unidentified? (:merge-unidentified options))
   (repo/read-sboms options (:input-path options))
   (repo/read-policies options (:license-policy options))
-  (repo/read-vulnerability-policies options (:vulnerability-policy options)))
+  (repo/read-vulnerability-policies options (:vulnerability-policy options))
+  (swap! repo/state assoc :spdx-licenses
+         (spdx-license-repo/read-license-list (:spdx-license-list options))))
 
 (defn violations?
   "Returns true if there are any blacklisted licenses or policy-blocked
@@ -145,9 +145,11 @@
 (defn dispatch
   "Dispatch on options: prints the requested `--report`, defaulting to
    `all-license`, rendered in the requested `--output-format` (`:edn`,
-   printed as-is, or `:json`/`:markdown`, rendered via `template/render`),
-   and, when `--fail-on-violations` is set, exits with status 1 if
-   `violations?` is true."
+   printed as-is, or `:json`/`:markdown`, rendered via `template/render`).
+   Returns `{:exit-code 1}` when `--fail-on-violations` is set and
+   `violations?` is true, `nil` otherwise -- never exits the process
+   itself, so callers (`run`, and tests exercising it directly) decide
+   what to do with that result."
   [options]
   (let [report-key (:report options)
         report-fn (get reports report-key all-license-reports)
@@ -157,30 +159,48 @@
       (println data)
       (println (template/render output-format report-key data))))
   (when (and (:fail-on-violations options) (violations?))
-    (System/exit 1)))
+    {:exit-code 1}))
 
 (defn handle
   "Initialize the state and handle the options."
   [options]
   (initialize-state options)
-  (dispatch options)
-  )
+  (dispatch options))
+
+(defn run
+  "Initializes state and dispatches the requested report for `options`.
+   Returns `nil` on success (having already printed the report and found
+   no `--fail-on-violations` exit condition), `{:exit-code 1}` when
+   `--fail-on-violations` found violations, or
+   `{:exit-code 2 :message \"...\"}` for a runtime/data error encountered
+   while reading SBOMs/policies or rendering the report -- with the full
+   exception chain appended to `:message` when `(:debug options)` is set.
+   Never calls `System/exit` itself, so it can be exercised directly from
+   tests without killing the test process."
+  [options]
+  (try
+    (handle options)
+    (catch clojure.lang.ExceptionInfo e
+      {:exit-code errors/runtime-error-exit-code
+       :message (cond-> (errors/friendly-message e)
+                  (:debug options) (str "\n\n" (errors/debug-details e)))})
+    (catch Exception e
+      {:exit-code errors/runtime-error-exit-code
+       :message (cond-> (str "An unexpected error occurred: " (ex-message e))
+                  (:debug options) (str "\n\n" (errors/debug-details e)))})))
 
 (defn -main
   "Main function as CLI entry point."
   [& args]
-  (let [{:keys [options exit-message success]} (validate-args args cli-opts)
-        ; options (merge default-options options)
-        exit-message (or exit-message
-                         (when (:help options)
-                           (usage-msg appname description (:summary options))))]
-    (when (:debug options)
-      (println options))
+  (let [{:keys [options exit-message success]} (validate-args args cli-opts)]
     (if exit-message
-      ; exit with message
+      ; a CLI usage error, or --help: print and exit without running anything
       (exit (if success 0 1) exit-message)
-      ; handle options and generate the requested outputs
-      (handle options))))
+      ; run the requested report, printing any error to stderr
+      (let [{:keys [exit-code message]} (run options)]
+        (when message
+          (binding [*out* *err*] (println message)))
+        (System/exit (or exit-code 0))))))
 
 (comment
   (-main "--help")

@@ -78,6 +78,16 @@
   []
   (:vulnerability-policies @state))
 
+(defn spdx-licenses
+  "Returns the loaded SPDX license list (a map of license id to
+   `{:name :deprecated? :osi-approved?}`, see
+   `sbom-tool.adapter.license.spdx/read-license-list`), or nil if none has
+   been loaded -- callers that resolve names against it (see
+   `sbom-tool.domain.license/spdx-license-name`) treat that the same as
+   an empty list, resolving nothing."
+  []
+  (:spdx-licenses @state))
+
 (defn policy-source
   "Return the SBOM format from options."
   ([options]

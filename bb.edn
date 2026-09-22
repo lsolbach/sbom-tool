@@ -1,1 +1,19 @@
-{:paths ["src" "resources"]}
+{:paths ["src" "resources" "test"]
+
+ :tasks
+ {:requires ([babashka.fs :as fs]
+             [clojure.string :as str]
+             [clojure.test :as t])
+
+  test {:doc "Runs every clojure.test namespace under test/"
+        :task (let [nses (->> (fs/glob "test" "**/*_test.clj")
+                               (map (fn [f]
+                                      (-> (fs/relativize "test" f)
+                                          str
+                                          (str/replace (re-pattern "\\.clj$") "")
+                                          (str/replace (re-pattern "[\\\\/]") ".")
+                                          (str/replace (re-pattern "_") "-")
+                                          symbol))))]
+                (run! require nses)
+                (let [{:keys [fail error]} (apply t/run-tests nses)]
+                  (System/exit (if (zero? (+ fail error)) 0 1))))}}}

@@ -32,9 +32,22 @@
 (def ^:private license-status-label
   {:white "ok" :black "blacklisted" :grey "review"})
 
-(defn- format-license-entry
-  [{:keys [license status]}]
-  (str license " (" (get license-status-label status (name status)) ")"))
+(defn- format-license-name
+  "Formats a license entry's display name for a markdown cell: its
+   `:license-name` (falling back to `:license-id` when unresolved) as a
+   link to `:license-url` when known, plain text otherwise."
+  [entry]
+  (let [label (or (:license-name entry) (:license-id entry))]
+    (if-let [url (:license-url entry)]
+      (str "[" label "](" url ")")
+      label)))
+
+(defn- status-label
+  "Formats a license policy `status` keyword (`:white`/`:black`/`:grey`)
+   as its human-readable label, or nil if `status` is nil (no license at
+   all, e.g. a component with no licenses)."
+  [status]
+  (when status (get license-status-label status (name status))))
 
 (def ^:private vulnerability-status-label
   {:ok "ok" :blocked "blocked" :accepted "accepted"})
@@ -54,13 +67,14 @@
   [{:keys [id severity status]}]
   (str (format-vulnerability-id id) " (" (name severity) ", " (get vulnerability-status-label status (name status)) ")"))
 
-(defn- format-choice
-  "Formats one license choice (a set of license ids that must be satisfied
-   together) as e.g. \"MIT\" or \"(MIT AND Apache-2.0)\"."
-  [choice]
-  (if (> (count choice) 1)
-    (str "(" (str/join " AND " (sort choice)) ")")
-    (first choice)))
+(defn- format-choice-cell
+  "Formats one column's value across a license choice (a set of
+   `license/license-entry`s that must be satisfied together, see
+   `sbom-tool.application.report/multi-licensed`) by applying `value-fn`
+   to each entry and joining them with \"AND\", e.g. \"MIT\" for a
+   single-entry choice or \"Apache-2.0 AND CC0-1.0\" for a two-entry one."
+  [choice value-fn]
+  (str/join " AND " (map value-fn (sort-by :license-id choice))))
 
 (defn- format-sources
   "Formats the source document formats (see `:sources` on a report entry)
@@ -69,12 +83,18 @@
   (str/join ", " (map name sources)))
 
 (defn- render-licenses
+  "Renders one row per component per license -- or, for a component with
+   no licenses at all, a single row with blank license columns, so it
+   isn't dropped from the report."
   [data]
-  (md-table ["Component" "Version" "Type" "Licenses" "Sources"]
-            (for [entry data]
+  (md-table ["Component" "Version" "Type" "License ID" "License Name" "Status" "Sources"]
+            (for [entry data
+                  license (or (seq (:licenses entry)) [nil])]
               [(:name entry) (:version entry)
                (some-> (:component-type entry) name)
-               (str/join "; " (map format-license-entry (:licenses entry)))
+               (:license-id license)
+               (format-license-name license)
+               (status-label (:status license))
                (format-sources (:sources entry))])))
 
 (defn- render-license-status-summary
@@ -91,29 +111,36 @@
                  (map (fn [[license count]] [license (str count)])))))
 
 (defn- render-multi-licensed
+  "Renders one row per component per license choice -- the disjunctive
+   (OR) alternatives a component offers -- with each column joining that
+   choice's conjunctive (AND) entries."
   [data]
-  (md-table ["Component" "Version" "Choices" "Sources"]
-            (for [entry data]
+  (md-table ["Component" "Version" "License ID" "License Name" "Status" "Sources"]
+            (for [entry data
+                  choice (:licenses entry)]
               [(:name entry) (:version entry)
-               (str/join " OR " (map format-choice (:licenses entry)))
+               (format-choice-cell choice :license-id)
+               (format-choice-cell choice format-license-name)
+               (format-choice-cell choice (comp status-label :status))
                (format-sources (:sources entry))])))
 
-(defn- format-unidentified-license
-  [{:keys [license url]}]
-  (if url
-    (str license " (see: " url ")")
-    (str license)))
-
 (defn- render-unidentified-licenses
+  "Renders one row per component per unidentified license -- or, for a
+   component with no licenses at all, a single row with blank license
+   columns, so it isn't dropped from the report."
   [data]
-  (md-table ["Component" "Version" "Reason" "Licenses" "Sources"]
-            (for [entry data]
+  (md-table ["Component" "Version" "Reason" "License ID" "License Name" "Status" "URL" "Sources"]
+            (for [entry data
+                  license (or (seq (:licenses entry)) [nil])]
               [(:name entry) (:version entry)
                (case (:reason entry)
                  :no-license "no license"
                  :unidentified-license "unidentified license"
                  (name (:reason entry)))
-               (str/join "; " (map format-unidentified-license (:licenses entry)))
+               (:license-id license)
+               (format-license-name license)
+               (status-label (:status license))
+               (:url license)
                (format-sources (:sources entry))])))
 
 (defn- render-vulnerabilities

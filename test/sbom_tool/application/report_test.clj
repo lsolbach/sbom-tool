@@ -43,6 +43,19 @@
   (testing "counts licenses per policy status"
     (is (= {:white 1 :black 1} (report/license-status-summary)))))
 
+(deftest licenses-spdx-name-enrichment-test
+  (testing "a license entry's :license-name and :license-url are nil when no license list is loaded"
+    (is (every? (comp nil? :license-name) (mapcat :licenses (report/licenses))))
+    (is (every? (comp nil? :license-url) (mapcat :licenses (report/licenses)))))
+  (testing "loading a license list enriches resolvable entries with their canonical :license-name and :license-url"
+    (swap! repo/state assoc :spdx-licenses
+           {"MIT" {:name "MIT License" :license-url "https://spdx.org/licenses/MIT.html"}})
+    (let [by-id (into {} (map (juxt :license-id identity)) (mapcat :licenses (report/licenses)))]
+      (is (= "MIT License" (:license-name (get by-id "MIT"))))
+      (is (= "https://spdx.org/licenses/MIT.html" (:license-url (get by-id "MIT"))))
+      (is (nil? (:license-name (get by-id "GPL-3.0-only"))))
+      (is (nil? (:license-url (get by-id "GPL-3.0-only")))))))
+
 (deftest license-summary-test
   (testing "counts components per license id"
     (is (= {"MIT" 1 "GPL-3.0-only" 1} (report/license-summary)))))
@@ -66,8 +79,37 @@
     (reset! repo/state {:sboms [#::sbom{:components [mit-or-apache-component]}]})
     (is (empty? (report/unidentified-licenses))))
   (testing "a license expression is reported when at least one referenced id does not resolve"
-    (reset! repo/state {:sboms [#::sbom{:components [mit-or-licenseref-component]}]})
-    (is (= #{"pkg:mixed-expr@1"} (into #{} (map :id) (report/unidentified-licenses))))))
+    (reset! repo/state {:policies license-policy
+                         :sboms [#::sbom{:components [mit-or-licenseref-component]}]})
+    (let [result (report/unidentified-licenses)]
+      (is (= #{"pkg:mixed-expr@1"} (into #{} (map :id) result)))
+      (testing "each license is a license/license-entry, same shape as the `licenses` report"
+        (let [entry (first (:licenses (first result)))]
+          (is (= #{:license-id :license-name :license-url :status :url} (set (keys entry))))
+          (is (= "MIT OR LicenseRef-custom" (:license-id entry)))
+          (is (nil? (:license-name entry)))
+          (is (nil? (:license-url entry)))
+          (is (= :grey (:status entry))))))))
+
+(def dual-licensed-component
+  #::sbom{:id "pkg:dual@1" :name "dual-lib" :version "1"
+          :licenses #::sbom{:declared [#::sbom{:license-id "MIT OR GPL-3.0-only"}]}})
+
+(deftest multi-licensed-test
+  (testing "a component with more than one license choice is reported"
+    (reset! repo/state {:policies license-policy
+                         :spdx-licenses {"MIT" {:name "MIT License" :license-url "https://spdx.org/licenses/MIT.html"}}
+                         :sboms [#::sbom{:components [dual-licensed-component]}]})
+    (let [result (report/multi-licensed)]
+      (is (= 1 (count result)))
+      (testing "each choice is a set of license/license-entry-shaped maps, same as the `licenses` report"
+        (let [entries (into #{} cat (:licenses (first result)))
+              by-id (into {} (map (juxt :license-id identity)) entries)]
+          (is (= #{:license-id :license-name :license-url :status} (set (keys (get by-id "MIT")))))
+          (is (= "MIT License" (:license-name (get by-id "MIT"))))
+          (is (= "https://spdx.org/licenses/MIT.html" (:license-url (get by-id "MIT"))))
+          (is (= :white (:status (get by-id "MIT"))))
+          (is (= :black (:status (get by-id "GPL-3.0-only")))))))))
 
 (deftest vulnerabilities-by-component-test
   (testing "returns every component that has at least one vulnerability"
@@ -98,7 +140,7 @@
           shared (get by-name "shared-lib")]
       (is (= #{"foo" "bar" "shared-lib"} (set (keys by-name))))
       (is (= #{:cyclonedx :spdx} (set (:sources shared))))
-      (is (some #(= "MIT" (:license %)) (:licenses shared))))
+      (is (some #(= "MIT" (:license-id %)) (:licenses shared))))
     (let [by-name (into {} (map (fn [e] [(:name e) e])) (report/vulnerabilities-by-component))
           shared (get by-name "shared-lib")]
       (is (= #{"CVE-2024-9999"} (into #{} (map :id) (:vulnerabilities shared))))

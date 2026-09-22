@@ -1,53 +1,53 @@
 (ns sbom-tool.domain.sbom
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]))
-  
-  ;
-  (s/def ::non-empty-string
-    (s/and string? #(not (clojure.string/blank? %))))
-  
-  (s/def ::id ::non-empty-string)
-  (s/def ::name ::non-empty-string)
-  (s/def ::version string?)
-  (s/def ::url string?)
-  (s/def ::description string?)
-  (s/def ::text string?)
 
-  (s/def ::purl string?)
-  (s/def ::cpe string?)
-  (s/def ::spdx-id string?)
-  (s/def ::bom-ref string?)
-  
-  (s/def ::identifiers
-    (s/keys :opt [::purl
-                  ::cpe
-                  ::spdx-id
-                  ::bom-ref]))
-  
-  (s/def ::hash-algorithm
-    #{:md5
-      :sha1
-      :sha256
-      :sha384
-      :sha512
-      :sha3-256
-      :sha3-384
-      :sha3-512
-      :blake2b-256
-      :blake2b-384
-      :blake2b-512
-      :blake3
-      :adler32})
-  
-  (s/def ::algorithm ::hash-algorithm)
-  (s/def ::value ::non-empty-string)
-  
-  (s/def ::hash
-    (s/keys :req [::algorithm ::value]))
-  
-  (s/def ::hashes
-    (s/coll-of ::hash :kind vector?))
-  
+  ;
+(s/def ::non-empty-string
+  (s/and string? #(not (clojure.string/blank? %))))
+
+(s/def ::id ::non-empty-string)
+(s/def ::name ::non-empty-string)
+(s/def ::version string?)
+(s/def ::url string?)
+(s/def ::description string?)
+(s/def ::text string?)
+
+(s/def ::purl string?)
+(s/def ::cpe string?)
+(s/def ::spdx-id string?)
+(s/def ::bom-ref string?)
+
+(s/def ::identifiers
+  (s/keys :opt [::purl
+                ::cpe
+                ::spdx-id
+                ::bom-ref]))
+
+(s/def ::hash-algorithm
+  #{:md5
+    :sha1
+    :sha256
+    :sha384
+    :sha512
+    :sha3-256
+    :sha3-384
+    :sha3-512
+    :blake2b-256
+    :blake2b-384
+    :blake2b-512
+    :blake3
+    :adler32})
+
+(s/def ::algorithm ::hash-algorithm)
+(s/def ::value ::non-empty-string)
+
+(s/def ::hash
+  (s/keys :req [::algorithm ::value]))
+
+(s/def ::hashes
+  (s/coll-of ::hash :kind vector?))
+
 (s/def ::license-id string?)
 (s/def ::license-name string?)
 (s/def ::license-text string?)
