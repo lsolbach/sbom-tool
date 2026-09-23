@@ -121,15 +121,18 @@
 (defn vulnerabilities-by-component
   "Returns the vulnerability report for every consolidated component that
    has at least one vulnerability (resolved against every source document
-   it was assembled from, see `sbom-tool.domain.vulnerability/
-   consolidated-component-vulnerabilities`): its id, name, version, type,
-   `:sources`, and its vulnerabilities with their policy status (:ok,
-   :blocked or :accepted), sorted by severity, most severe first."
+   it was assembled from, plus any loaded `repo/external-vulnerabilities`,
+   see `sbom-tool.domain.vulnerability/consolidated-component-
+   vulnerabilities`): its id, name, version, type, `:sources`, and its
+   vulnerabilities with their policy status (:ok, :blocked or :accepted),
+   sorted by severity, most severe first."
   []
-  (let [policy (repo/vulnerability-policies)]
+  (let [policy (repo/vulnerability-policies)
+        external-vulnerabilities (repo/external-vulnerabilities)]
     (->> (repo/consolidated-components)
          (keep (fn [component]
-                 (let [report (vulnerability/consolidated-component-report policy component)]
+                 (let [report (vulnerability/consolidated-component-report
+                               policy component external-vulnerabilities)]
                    (when (seq (:vulnerabilities report))
                      (with-provenance component
                        (update report :vulnerabilities

@@ -53,6 +53,7 @@ sbom-tool -I sboms -r all-license -o json
 | `-I, --input-path PATH`             | `sboms`    | Folder containing the SBOM files    |
 | `-s, --sbom-format FORMAT`          | `:auto`    | SBOM format to read: `:auto` (every `*.cdx.json` and `*.spdx.json` file), `:cdx` or `:spdx` |
 | `-m, --merge-unidentified`          | `false`    | Also merge components across documents that carry neither a purl nor a cpe, by name/version alone (see "Multi-format consolidation" below) |
+| `-D, --vulnerability-source SOURCE` | `:none`    | Source for live vulnerability lookups keyed by component purl: `:none` (fully offline) or `:deps-dev` (see "Live vulnerability lookups (deps.dev)" below) |
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
 | `-L, --spdx-license-list PATH`      | —          | SPDX license list JSON file (`json/licenses.json` from [spdx/license-list-data](https://github.com/spdx/license-list-data)); falls back to a bundled snapshot |
@@ -79,6 +80,7 @@ message.
 **Disclaimer**: The vulnerability reports rely on the information contained in the SBOM files and only report the vulnerabilities known at the time the SBOMs were created.
 When the SBOMs do not contain vulnerability information, no vulnerabilities are reported -- which reads as "no known vulnerabilities" even though the truth is "no data".
 Because of this, the default report (`all-license`) omits vulnerability reports; request `all-vulnerabilities` or `all` explicitly once your SBOMs are known to carry vulnerability data.
+Opting into `-D deps-dev` (see below) supplements this with live lookups, but only for components identified by purl -- it does not replace SBOM-embedded data, and is itself just one vulnerability database among several.
 
 **The SBOM Tool should not be treated as the only measure for vulnerability checks.**
 
@@ -124,6 +126,25 @@ to use a different (e.g. newer) one instead.
 
 In the `markdown` output format, the License Name column links to `:license-url` when known, so a
 reader can click straight through to the license text.
+
+### Live vulnerability lookups (deps.dev)
+
+By default, the tool is fully offline: vulnerability reports only ever contain what the SBOM
+documents themselves declared (see the disclaimer above). Passing `-D deps-dev`/
+`--vulnerability-source deps-dev` opts into supplementing that with live lookups against Google
+[deps.dev](https://deps.dev), keyed by each consolidated component's purl -- deps.dev has no
+cpe or name/version-only lookup, so components identified only by cpe, or not identified at all,
+get no enrichment from this. This makes network calls to `https://api.deps.dev`, requires no API
+key, and its findings flow through the same `vulnerability` report, `vulnerability-summary`,
+`blocked-vulnerabilities` and `--fail-on-violations` gating as SBOM-embedded ones -- they show up
+identically, just with `"deps.dev"` as their `:source`.
+
+A failed lookup (network error, an unrecognized purl type, or an advisory with no usable id)
+never aborts the run: it is logged as a warning on stderr and treated as "no additional
+vulnerabilities for this component," so the rest of the report is unaffected. If lookups fail
+with a TLS/certificate error in a network environment with an intercepting proxy, rerun with
+`-d`/`--debug` and, if needed, point the JVM at the right trust store via
+`-Djavax.net.ssl.trustStore`/`-Djavax.net.ssl.trustStorePassword`.
 
 ### Multi-format consolidation
 

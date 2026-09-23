@@ -132,6 +132,25 @@
     (is (= #{"CVE-2024-0001"}
            (into #{} (map :id) (report/blocked-vulnerabilities))))))
 
+(def external-only-component
+  #::sbom{:id "pkg:npm/external@1" :name "external-lib" :version "1"
+          :identifiers #::sbom{:purl "pkg:npm/external@1"}})
+
+(def external-cve
+  #::sbom{:id "CVE-2024-9998" :severity :critical :source #::sbom{:name "deps.dev"}})
+
+(deftest external-vulnerabilities-report-test
+  (testing "an external-vulnerabilities entry is picked up with no SBOM-embedded vulnerabilities at all"
+    (reset! repo/state {:vulnerability-policies vulnerability-policy
+                         :sboms [#::sbom{:components [external-only-component]}]
+                         :external-vulnerabilities {"pkg:npm/external@1" [external-cve]}})
+    (let [result (report/vulnerabilities-by-component)]
+      (is (= 1 (count result)))
+      (is (= #{"CVE-2024-9998"} (into #{} (map :id) (:vulnerabilities (first result))))))
+    (is (= {:by-severity {:critical 1} :affected-components 1}
+           (report/vulnerability-summary)))
+    (is (= #{"CVE-2024-9998"} (into #{} (map :id) (report/blocked-vulnerabilities))))))
+
 (deftest consolidated-reports-e2e-test
   (testing "a package described by both a CycloneDX and an SPDX file is reported once, with both sources"
     (reset! repo/state {:policies license-policy :vulnerability-policies vulnerability-policy})

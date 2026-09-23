@@ -1,0 +1,13 @@
+{
+  "versionKey": {
+    "system": "NPM",
+    "name": "lodash",
+    "version": "4.17.15"
+  },
+  "publishedAt": "2019-07-19T02:23:57Z",
+  "isDefault": false,
+  "licenses": ["MIT"],
+  "advisoryKeys": [
+    {"id": "GHSA-p6mc-m468-83gw"}
+  ]
+}

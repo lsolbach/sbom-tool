@@ -66,12 +66,24 @@
                    (assoc (component/merge-components (map second pairs))
                           :origins origins)))))))
 
-(defn vulnerabilities
-  "Returns the set of distinct vulnerabilities across all SBOMs."
+(defn external-vulnerabilities
+  "Returns the vulnerabilities loaded from an external vulnerability
+   database adapter (e.g. `sbom-tool.adapter.vulnerability.deps-dev`, see
+   `read-vulnerability-sources`): a map of purl string to a vector of
+   canonical `::sbom/vulnerability` records, one entry per distinct purl
+   looked up across `consolidated-components`. Empty (`nil`) unless
+   `--vulnerability-source` opted into one."
   []
-  (->> (sboms)
-       (mapcat ::sbom/vulnerabilities)
-       (into #{})))
+  (:external-vulnerabilities @state))
+
+(defn vulnerabilities
+  "Returns the set of distinct vulnerabilities across all SBOMs, unioned
+   with any loaded `external-vulnerabilities`."
+  []
+  (into (->> (sboms)
+             (mapcat ::sbom/vulnerabilities)
+             (into #{}))
+        (mapcat val (external-vulnerabilities))))
 
 (defn vulnerability-policies
   "Returns the vulnerability policy."
@@ -114,6 +126,14 @@
   ([_options & _]
    :file))
 
+(defn vulnerability-source
+  "Return the vulnerability source from options: `:none` (default, no live
+   lookups against an external vulnerability database) or `:deps-dev`."
+  ([options]
+   (:vulnerability-source options))
+  ([options & _]
+   (:vulnerability-source options)))
+
 (defmulti read-policies
   "Reads the SBOMs"
   policy-source)
@@ -125,6 +145,17 @@
 (defmulti read-sboms
   "Reads the SBOMs"
   sbom-format)
+
+(defmulti read-vulnerability-sources
+  "Reads external vulnerability data (e.g. live deps.dev lookups) per
+   `vulnerability-source`, populating `:external-vulnerabilities` in
+   `state`. `:none` is a no-op -- the default, so the tool stays fully
+   offline unless a source is explicitly opted into."
+  vulnerability-source)
+
+(defmethod read-vulnerability-sources :none
+  [_options _source]
+  nil)
 
 ;; Reads every CycloneDX and SPDX file under `path`, accumulating both into
 ;; `:sboms` (each format's `read-sboms` method appends rather than

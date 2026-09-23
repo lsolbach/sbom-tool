@@ -10,6 +10,7 @@
             [sbom-tool.adapter.sbom.spdx :as spdx-repo]
             [sbom-tool.adapter.license.spdx :as spdx-license-repo]
             [sbom-tool.adapter.policies :as policy-repo]
+            [sbom-tool.adapter.vulnerability.deps-dev :as deps-dev-repo]
             [sbom-tool.adapter.report.markdown :as markdown-report]
             [sbom-tool.adapter.report.json :as json-report]
             [sbom-tool.application.repository :as repo])
@@ -68,6 +69,14 @@
    ["-L" "--spdx-license-list PATH" "Path of an SPDX license list JSON file (json/licenses.json from spdx/license-list-data); falls back to the bundled snapshot"]
    ["-s" "--sbom-format FORMAT" "Format of the SBOMs: auto (both), cdx or spdx" :default :auto :parse-fn keyword]
    ["-m" "--merge-unidentified" "Also merge components across documents that carry neither a purl nor a cpe, by name/version alone -- riskier, since unrelated packages can coincidentally share both across ecosystems"]
+   ["-D" "--vulnerability-source SOURCE"
+    (str "Source for live vulnerability lookups keyed by component purl, one of: "
+         (str/join ", " (map name (keys (methods repo/read-vulnerability-sources))))
+         " -- none (default) keeps the tool fully offline; deps-dev makes network calls to https://api.deps.dev")
+    :default :none
+    :parse-fn keyword
+    :validate [(set (keys (methods repo/read-vulnerability-sources)))
+               (str "Must be one of: " (str/join ", " (map name (keys (methods repo/read-vulnerability-sources)))))]]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
     :default :all-license
     :parse-fn keyword
@@ -133,7 +142,8 @@
   (repo/read-policies options (:license-policy options))
   (repo/read-vulnerability-policies options (:vulnerability-policy options))
   (swap! repo/state assoc :spdx-licenses
-         (spdx-license-repo/read-license-list (:spdx-license-list options))))
+         (spdx-license-repo/read-license-list (:spdx-license-list options)))
+  (repo/read-vulnerability-sources options (:vulnerability-source options)))
 
 (defn violations?
   "Returns true if there are any blacklisted licenses or policy-blocked

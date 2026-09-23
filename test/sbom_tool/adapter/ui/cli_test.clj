@@ -17,6 +17,7 @@
    :sbom-format :auto
    :license-policy nil
    :vulnerability-policy nil
+   :vulnerability-source :none
    :merge-unidentified false
    :report :all-license
    :output-format :edn

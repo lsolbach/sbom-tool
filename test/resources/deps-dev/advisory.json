@@ -1,0 +1,8 @@
+{
+  "advisoryKey": {"id": "GHSA-p6mc-m468-83gw"},
+  "url": "https://osv.dev/vulnerability/GHSA-p6mc-m468-83gw",
+  "title": "Prototype Pollution in lodash",
+  "aliases": ["CVE-2020-8203", "GHSA-p6mc-m468-83gw"],
+  "cvss3Score": 7.4,
+  "cvss3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+}
