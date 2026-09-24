@@ -11,6 +11,7 @@
 ;;
 ;; Add further usage buckets (:application, :container, :framework, ...)
 ;; the same way to diverge from :default.
+;;
 {:default
  {:whitelist #{"MIT"
                "Apache-2.0"
@@ -72,4 +73,21 @@
                "LGPL-2.1-only" "LGPL-2.1-or-later"
                "LGPL-3.0-only" "LGPL-3.0-or-later"
                "EUPL-1.1" "EUPL-1.2"
-               "SSPL-1.0"}}}
+               "SSPL-1.0"}}
+
+;; :proprietary and :reviewed are global (not scoped per usage bucket) sets
+;; of component matchers -- either a bare name, or a map narrowing the
+;; match to an exact {:name ... :version ...} or a {:purl ...}:
+;; - :proprietary components are closed source and legitimately carry no
+;;   license metadata; they are reported with a `proprietary` status
+;;   instead of "no license".
+;; - :reviewed components have already had their license situation (grey,
+;;   unidentified, or no license) manually checked and accepted; they are
+;;   reported with a `reviewed` status instead. :reviewed never overrides
+;;   a :blacklist match -- a blacklisted license stays blocked.
+ :proprietary #{"acme-internal-lib"
+                {:name "acme-widget" :version "3.2.0"}
+                {:purl "pkg:generic/acme/legacy-tool"}}
+
+ :reviewed #{"beerware-fork"
+             {:name "vendor-sdk" :version "9.1.0"}}}

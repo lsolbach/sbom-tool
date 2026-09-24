@@ -30,7 +30,8 @@
          "\n")))
 
 (def ^:private license-status-label
-  {:white "ok" :black "blacklisted" :grey "review"})
+  {:white "ok" :black "blacklisted" :grey "review"
+   :proprietary "proprietary" :no-license "no license" :reviewed "reviewed"})
 
 (defn- format-license-name
   "Formats a license entry's display name for a markdown cell: its
@@ -100,7 +101,7 @@
 (defn- render-license-status-summary
   [data]
   (md-table ["Status" "Count"]
-            (for [status [:white :grey :black]]
+            (for [status [:white :grey :black :proprietary :no-license :reviewed]]
               [(name status) (str (get data status 0))])))
 
 (defn- render-license-summary
@@ -136,6 +137,8 @@
                (case (:reason entry)
                  :no-license "no license"
                  :unidentified-license "unidentified license"
+                 :proprietary "proprietary"
+                 :reviewed "reviewed"
                  (name (:reason entry)))
                (:license-id license)
                (format-license-name license)

@@ -69,11 +69,14 @@
 
 (defn license-summary
   "Returns the count of components using each license (by license id)
-   across all components."
+   across all components. Components with no license id at all -- the
+   synthetic `:proprietary`/`:no-license` entry `license/component-report`
+   returns for a component with no licenses, see `licenses` -- are excluded
+   rather than counted under a spurious `nil` bucket."
   []
   (->> (licenses)
        (mapcat :licenses)
-       (map :license-id)
+       (keep :license-id)
        frequencies))
 
 (defn blacklisted-licenses
@@ -87,11 +90,15 @@
 (defn unidentified-licenses
   "Returns the components that either have no license information at all,
    or whose licenses could not be resolved to a standard SPDX license
-   identifier (free-text license names, or custom LicenseRef- ids). For
-   the latter, each license is a `license/license-entry` (same shape as
-   `licenses`' per-license entries) plus its `:url`, if any, so free-text
-   names like \"Unknown - See URL\" remain traceable to the license terms
-   they refer to."
+   identifier (free-text license names, or custom LicenseRef- ids), or that
+   the license policy declares `:proprietary` or `:reviewed` (see
+   `license/proprietary?`/`license/reviewed?`) -- checked ahead of the
+   other two so a policy-declared component is reported as such even if it
+   also carries stray unresolved license text. For an unidentified-license
+   or reviewed-with-license-text entry, each license is a
+   `license/license-entry` (same shape as `licenses`' per-license entries)
+   plus its `:url`, if any, so free-text names like \"Unknown - See URL\"
+   remain traceable to the license terms they refer to."
   []
   (let [policies (repo/policies)
         spdx-licenses (repo/spdx-licenses)]
@@ -103,6 +110,21 @@
                              :name (::sbom/name component)
                              :version (::sbom/version component)}]
                    (cond
+                     (license/proprietary? (:proprietary policies) component)
+                     (with-provenance component (assoc base :reason :proprietary))
+
+                     (license/reviewed? (:reviewed policies) component)
+                     (with-provenance component
+                       (cond-> (assoc base :reason :reviewed)
+                         (seq licenses)
+                         (assoc :licenses
+                                (into #{}
+                                      (map (fn [lic]
+                                             (assoc (license/license-entry
+                                                     policy spdx-licenses (license/license-identifier lic))
+                                                    :url (license/license-url lic))))
+                                      licenses))))
+
                      (empty? licenses)
                      (with-provenance component (assoc base :reason :no-license))
 

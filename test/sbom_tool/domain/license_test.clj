@@ -59,3 +59,62 @@
       (let [report (license/component-report {} nil component)]
         (is (every? (comp nil? :license-name) (:licenses report)))
         (is (every? (comp nil? :license-url) (:licenses report)))))))
+
+(deftest proprietary?-test
+  (testing "matches by bare name against any version"
+    (is (true? (license/proprietary? #{"acme-lib"} #::sbom{:id "1" :name "acme-lib" :version "1.0"}))))
+  (testing "does not match a different name"
+    (is (false? (license/proprietary? #{"acme-lib"} #::sbom{:id "1" :name "other-lib" :version "1.0"}))))
+  (testing "a {:name :version} matcher only matches that exact version"
+    (is (true? (license/proprietary? #{{:name "acme-lib" :version "2.0"}}
+                                      #::sbom{:id "1" :name "acme-lib" :version "2.0"})))
+    (is (false? (license/proprietary? #{{:name "acme-lib" :version "2.0"}}
+                                       #::sbom{:id "1" :name "acme-lib" :version "1.0"}))))
+  (testing "a {:purl} matcher matches by purl regardless of name"
+    (is (true? (license/proprietary? #{{:purl "pkg:generic/acme/tool"}}
+                                      #::sbom{:id "1" :name "different-name"
+                                              :identifiers #::sbom{:purl "pkg:generic/acme/tool"}}))))
+  (testing "an empty proprietary set matches nothing"
+    (is (false? (license/proprietary? #{} #::sbom{:id "1" :name "acme-lib"})))))
+
+(deftest reviewed?-test
+  (testing "matches under the same rule as proprietary?"
+    (is (true? (license/reviewed? #{"vendor-sdk"} #::sbom{:id "1" :name "vendor-sdk" :version "1.0"})))
+    (is (false? (license/reviewed? #{"vendor-sdk"} #::sbom{:id "1" :name "other" :version "1.0"})))))
+
+(deftest component-report-no-license-and-proprietary-test
+  (let [component #::sbom{:id "pkg:none@1" :name "none-lib" :version "1"}]
+    (testing "a component with no licenses at all gets a synthetic :no-license entry"
+      (let [report (license/component-report {} nil component)]
+        (is (= [{:license-id nil :license-name nil :license-url nil :status :no-license}]
+               (:licenses report)))))
+    (testing "a component matching :proprietary gets a synthetic :proprietary entry instead"
+      (let [report (license/component-report {:proprietary #{"none-lib"}} nil component)]
+        (is (= :proprietary (:status (first (:licenses report)))))))))
+
+(deftest component-report-reviewed-test
+  (let [grey-component #::sbom{:id "pkg:grey@1" :name "grey-lib" :version "1"
+                                :licenses #::sbom{:declared [#::sbom{:license-id "Beerware"}]}}
+        no-license-component #::sbom{:id "pkg:none@1" :name "none-lib" :version "1"}
+        mit-component #::sbom{:id "pkg:mit@1" :name "mit-lib" :version "1"
+                               :licenses #::sbom{:declared [#::sbom{:license-id "MIT"}]}}]
+    (testing "a reviewed component's grey license is downgraded to :reviewed"
+      (let [report (license/component-report {:reviewed #{"grey-lib"}} nil grey-component)]
+        (is (= :reviewed (:status (first (:licenses report)))))))
+    (testing "a reviewed component's synthetic :no-license entry is downgraded to :reviewed"
+      (let [report (license/component-report {:reviewed #{"none-lib"}} nil no-license-component)]
+        (is (= :reviewed (:status (first (:licenses report)))))))
+    (testing "reviewed never downgrades :white"
+      (let [report (license/component-report {:default {:whitelist #{"MIT"}} :reviewed #{"mit-lib"}}
+                                               nil mit-component)]
+        (is (= :white (:status (first (:licenses report)))))))
+    (testing "reviewed never downgrades :black"
+      (let [gpl-component #::sbom{:id "pkg:gpl@1" :name "gpl-lib" :version "1"
+                                   :licenses #::sbom{:declared [#::sbom{:license-id "GPL-3.0-only"}]}}
+            report (license/component-report {:default {:blacklist #{"GPL-3.0-only"}} :reviewed #{"gpl-lib"}}
+                                               nil gpl-component)]
+        (is (= :black (:status (first (:licenses report)))))))
+    (testing "a component matching both :proprietary and :reviewed stays :proprietary"
+      (let [report (license/component-report {:proprietary #{"none-lib"} :reviewed #{"none-lib"}}
+                                               nil no-license-component)]
+        (is (= :proprietary (:status (first (:licenses report)))))))))

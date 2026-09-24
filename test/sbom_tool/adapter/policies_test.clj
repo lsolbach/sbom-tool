@@ -7,6 +7,10 @@
     (is (contains? (policies/read-license-policy-file nil) :default)))
   (testing "reads a given policy file"
     (is (contains? (policies/read-license-policy-file "example-license-policy.edn") :library)))
+  (testing "a policy file's :proprietary and :reviewed sets round-trip through validation"
+    (let [policy (policies/read-license-policy-file "example-license-policy.edn")]
+      (is (contains? (:proprietary policy) "acme-internal-lib"))
+      (is (contains? (:reviewed policy) "beerware-fork"))))
   (testing "a missing file raises an ex-info tagged :policy-file-not-found"
     (is (= :policy-file-not-found
            (:sbom-tool/error-type

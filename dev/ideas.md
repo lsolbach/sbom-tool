@@ -1,5 +1,7 @@
 # Ideas
 
+## License Policies
+
 ## SPDX Licenses
 * Read SPDX license information as JSON from
   * Github repo -- fetch/refresh the snapshot from spdx/license-list-data at runtime, instead of

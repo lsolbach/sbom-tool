@@ -13,8 +13,29 @@
 (s/def ::policy-key
   (s/or :default #{:default} :component-type ::sbom/component-type))
 
+;; Identifies a specific component in a `::proprietary` or `::reviewed` set:
+;; a bare component name, a {:name ... :version ...} map narrowing the
+;; match to an exact version, or a {:purl ...} map matching by purl alone.
+(s/def ::component-matcher
+  (s/or :name ::sbom/non-empty-string
+        :name-matcher (s/keys :req-un [::sbom/name] :opt-un [::sbom/version])
+        :purl-matcher (s/keys :req-un [::sbom/purl])))
+
+(s/def ::component-matchers (s/coll-of ::component-matcher :kind set?))
+
+(s/def ::proprietary ::component-matchers)
+(s/def ::reviewed ::component-matchers)
+
+(s/def ::type-policies (s/map-of ::policy-key ::type-policy))
+
+;; ::policies can no longer be a plain `map-of` once :proprietary/:reviewed
+;; are reserved keys with a different value shape than a `::type-policy`;
+;; split validation into the reserved keys plus everything else.
 (s/def ::policies
-  (s/map-of ::policy-key ::type-policy))
+  (s/and map?
+         #(s/valid? ::proprietary (get % :proprietary #{}))
+         #(s/valid? ::reviewed (get % :reviewed #{}))
+         #(s/valid? ::type-policies (apply dissoc % [:proprietary :reviewed]))))
 
 (defn license-identifier
   "Returns the identifying string of `license`, preferring its SPDX id
@@ -41,6 +62,34 @@
    the `:default` policy."
   [policies component-type]
   (get policies component-type (:default policies)))
+
+(defn- normalize-component-matcher
+  [matcher]
+  (if (string? matcher) {:name matcher} matcher))
+
+(defn- matches-any?
+  [matchers component]
+  (boolean
+   (some (fn [matcher]
+           (let [{:keys [name version purl]} (normalize-component-matcher matcher)]
+             (if purl
+               (= purl (get-in component [::sbom/identifiers ::sbom/purl]))
+               (and (= name (::sbom/name component))
+                    (or (nil? version) (= version (::sbom/version component)))))))
+         matchers)))
+
+(defn proprietary?
+  "Returns true if `component` matches any entry of `proprietary` (the
+   policy's :proprietary set): an exact purl match, or else a name match,
+   optionally narrowed to an exact version."
+  [proprietary component]
+  (matches-any? proprietary component))
+
+(defn reviewed?
+  "Returns true if `component` matches any entry of `reviewed` (the
+   policy's :reviewed set), under the same matching rule as `proprietary?`."
+  [reviewed component]
+  (matches-any? reviewed component))
 
 (defn license-status
   "Returns the status of `identifier` under `policy`: `:white` if
@@ -90,19 +139,43 @@
    :license-url (spdx-license-url spdx-licenses identifier)
    :status (license-status policy identifier)})
 
+(defn- reviewed-status
+  "Downgrades `status` to `:reviewed` when it's one of the \"needs
+   attention\" statuses (`:grey`, `:no-license`), leaving `:white`,
+   `:black` and `:proprietary` untouched -- reviewing a component resolves
+   ambiguity, it never overrides an already-decided or already-explained
+   status."
+  [status]
+  (if (#{:grey :no-license} status) :reviewed status))
+
 (defn component-report
   "Returns the license report for a single `component`, given `policies`.
    Each license entry is a `license-entry`, given the component's own
-   usage-specific policy (see `policy-for`)."
+   usage-specific policy (see `policy-for`) -- except when `component` has
+   no licenses at all, in which case a single synthetic entry is returned
+   instead of an empty vector, its `:status` `:proprietary` if `component`
+   matches the policy's `:proprietary` set, `:no-license` otherwise. Either
+   way, `:grey`/`:no-license` statuses are further downgraded to
+   `:reviewed` when `component` matches the policy's `:reviewed` set (see
+   `reviewed-status`)."
   [policies spdx-licenses component]
-  (let [policy (policy-for policies (::sbom/component-type component))]
+  (let [policy (policy-for policies (::sbom/component-type component))
+        licenses (component-licenses component)
+        raw-licenses (if (empty? licenses)
+                       [{:license-id nil :license-name nil :license-url nil
+                         :status (if (proprietary? (:proprietary policies) component)
+                                   :proprietary
+                                   :no-license)}]
+                       (into []
+                             (map (comp (partial license-entry policy spdx-licenses) license-identifier))
+                             licenses))]
     {:id (::sbom/id component)
      :name (::sbom/name component)
      :version (::sbom/version component)
      :component-type (::sbom/component-type component)
-     :licenses (into []
-                      (map (comp (partial license-entry policy spdx-licenses) license-identifier))
-                      (component-licenses component))}))
+     :licenses (if (reviewed? (:reviewed policies) component)
+                 (mapv #(update % :status reviewed-status) raw-licenses)
+                 raw-licenses)}))
 
 (def ^:private license-expression-token-re
   ;; Tokenizes into "(", ")", the AND/OR operator keywords, or the runs of

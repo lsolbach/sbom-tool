@@ -74,6 +74,9 @@
   #::sbom{:id "pkg:mixed-expr@1" :name "mixed-expr-lib" :version "1"
           :licenses #::sbom{:declared [#::sbom{:license-id "MIT OR LicenseRef-custom"}]}})
 
+(def no-license-component
+  #::sbom{:id "pkg:none@1" :name "none-lib" :version "1"})
+
 (deftest unidentified-licenses-test
   (testing "a license expression is not reported when every referenced id resolves"
     (reset! repo/state {:sboms [#::sbom{:components [mit-or-apache-component]}]})
@@ -90,6 +93,62 @@
           (is (nil? (:license-name entry)))
           (is (nil? (:license-url entry)))
           (is (= :grey (:status entry))))))))
+
+(deftest unidentified-licenses-proprietary-and-reviewed-test
+  (testing "a proprietary component (no licenses) is reported with :reason :proprietary"
+    (reset! repo/state {:policies (assoc license-policy :proprietary #{"none-lib"})
+                         :sboms [#::sbom{:components [no-license-component]}]})
+    (let [result (report/unidentified-licenses)]
+      (is (= 1 (count result)))
+      (is (= :proprietary (:reason (first result))))
+      (is (not (contains? (first result) :licenses)))))
+  (testing "proprietary takes precedence over an unresolved license id"
+    (reset! repo/state {:policies (assoc license-policy :proprietary #{"mixed-expr-lib"})
+                         :sboms [#::sbom{:components [mit-or-licenseref-component]}]})
+    (let [result (report/unidentified-licenses)]
+      (is (= :proprietary (:reason (first result))))
+      (is (not (contains? (first result) :licenses)))))
+  (testing "a reviewed component with no licenses is reported with :reason :reviewed and no :licenses"
+    (reset! repo/state {:policies (assoc license-policy :reviewed #{"none-lib"})
+                         :sboms [#::sbom{:components [no-license-component]}]})
+    (let [result (report/unidentified-licenses)]
+      (is (= :reviewed (:reason (first result))))
+      (is (not (contains? (first result) :licenses)))))
+  (testing "a reviewed component with unresolved license text is reported with :reason :reviewed and its :licenses"
+    (reset! repo/state {:policies (assoc license-policy :reviewed #{"mixed-expr-lib"})
+                         :sboms [#::sbom{:components [mit-or-licenseref-component]}]})
+    (let [result (report/unidentified-licenses)]
+      (is (= :reviewed (:reason (first result))))
+      (is (= "MIT OR LicenseRef-custom" (:license-id (first (:licenses (first result))))))))
+  (testing "proprietary and reviewed are resolved independently per component"
+    (reset! repo/state {:policies (assoc license-policy
+                                          :proprietary #{"none-lib"}
+                                          :reviewed #{"mixed-expr-lib"})
+                         :sboms [#::sbom{:components [no-license-component mit-or-licenseref-component]}]})
+    (let [result (report/unidentified-licenses)
+          by-name (into {} (map (juxt :name identity)) result)]
+      (is (= :proprietary (:reason (get by-name "none-lib"))))
+      (is (= :reviewed (:reason (get by-name "mixed-expr-lib")))))))
+
+(deftest license-status-summary-gap-test
+  (testing "a zero-license component counts as :no-license"
+    (reset! repo/state {:policies license-policy
+                         :sboms [#::sbom{:components [mit-component no-license-component]}]})
+    (is (= {:white 1 :no-license 1} (report/license-status-summary))))
+  (testing "a proprietary zero-license component counts as :proprietary instead"
+    (reset! repo/state {:policies (assoc license-policy :proprietary #{"none-lib"})
+                         :sboms [#::sbom{:components [no-license-component]}]})
+    (is (= {:proprietary 1} (report/license-status-summary))))
+  (testing "a reviewed component's grey status counts as :reviewed"
+    (reset! repo/state {:policies (assoc license-policy :reviewed #{"mixed-expr-lib"})
+                         :sboms [#::sbom{:components [mit-or-licenseref-component]}]})
+    (is (= {:reviewed 1} (report/license-status-summary)))))
+
+(deftest license-summary-gap-test
+  (testing "a zero-license component's synthetic nil license id is not counted"
+    (reset! repo/state {:policies license-policy
+                         :sboms [#::sbom{:components [mit-component no-license-component]}]})
+    (is (= {"MIT" 1} (report/license-summary)))))
 
 (def dual-licensed-component
   #::sbom{:id "pkg:dual@1" :name "dual-lib" :version "1"

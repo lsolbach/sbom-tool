@@ -24,6 +24,21 @@
                     [{:id "pkg:none@1" :name "none-lib" :version "1" :component-type :library
                       :licenses [] :sources [:cyclonedx]}])]
       (is (str/includes? markdown "| none-lib | 1 | library |  |  |  | cyclonedx |"))))
+  (testing "renders the :proprietary, :no-license and :reviewed statuses with their own labels"
+    (let [markdown (markdown/render-report
+                    :licenses
+                    [{:id "pkg:prop@1" :name "prop-lib" :version "1" :component-type :library
+                      :licenses [{:license-id nil :license-name nil :license-url nil :status :proprietary}]
+                      :sources [:cyclonedx]}
+                     {:id "pkg:none@1" :name "none-lib" :version "1" :component-type :library
+                      :licenses [{:license-id nil :license-name nil :license-url nil :status :no-license}]
+                      :sources [:cyclonedx]}
+                     {:id "pkg:rev@1" :name "rev-lib" :version "1" :component-type :library
+                      :licenses [{:license-id "Beerware" :license-name nil :status :reviewed}]
+                      :sources [:cyclonedx]}])]
+      (is (str/includes? markdown "| prop-lib | 1 | library |  |  | proprietary | cyclonedx |"))
+      (is (str/includes? markdown "| none-lib | 1 | library |  |  | no license | cyclonedx |"))
+      (is (str/includes? markdown "| rev-lib | 1 | library | Beerware | Beerware | reviewed | cyclonedx |"))))
   (testing "links the license name to its :license-url, when known"
     (let [markdown (markdown/render-report
                     :licenses
@@ -47,7 +62,16 @@
       (is (str/includes? markdown "## License Status Summary"))
       (is (str/includes? markdown "| white | 2 |"))
       (is (str/includes? markdown "| grey | 0 |"))
-      (is (str/includes? markdown "| black | 1 |")))))
+      (is (str/includes? markdown "| black | 1 |"))
+      (is (str/includes? markdown "| proprietary | 0 |"))
+      (is (str/includes? markdown "| no-license | 0 |"))
+      (is (str/includes? markdown "| reviewed | 0 |"))))
+  (testing "renders non-zero :proprietary, :no-license and :reviewed counts"
+    (let [markdown (markdown/render-report :license-status-summary
+                                            {:white 1 :proprietary 2 :no-license 3 :reviewed 4})]
+      (is (str/includes? markdown "| proprietary | 2 |"))
+      (is (str/includes? markdown "| no-license | 3 |"))
+      (is (str/includes? markdown "| reviewed | 4 |")))))
 
 (deftest render-license-summary-test
   (testing "renders a count-per-license table, most-used license first"
@@ -98,6 +122,15 @@
                       :sources [:spdx]}])]
       (is (str/includes? markdown
                           "| c | 1 | unidentified license | Unknown - See URL | Unknown - See URL | review | https://example.com/license | spdx |")))))
+  (testing "renders the proprietary and reviewed reasons as readable text"
+    (let [markdown (markdown/render-report
+                    :unidentified-licenses
+                    [{:id "pkg:d@1" :name "d" :version "1" :reason :proprietary :sources [:cyclonedx]}
+                     {:id "pkg:e@1" :name "e" :version "1" :reason :reviewed
+                      :licenses #{{:license-id "LicenseRef-custom" :license-name nil :status :reviewed}}
+                      :sources [:spdx]}])]
+      (is (str/includes? markdown "| d | 1 | proprietary |  |  |  |  | cyclonedx |"))
+      (is (str/includes? markdown "| e | 1 | reviewed | LicenseRef-custom | LicenseRef-custom | reviewed |  | spdx |"))))
 
 (deftest render-vulnerabilities-test
   (testing "joins each component's vulnerabilities inline with severity and status"
