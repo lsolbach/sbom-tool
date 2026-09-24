@@ -98,6 +98,19 @@ entry), each with:
 - Any license that is neither whitelisted nor blacklisted is reported as greylisted, requiring
   manual review.
 
+Two further keys sit alongside the component-type buckets, global rather than per-type, each a
+set of component matchers -- a bare component name, a `{:name ... :version ...}` map narrowing
+the match to an exact version, or a `{:purl ...}` map matching by purl:
+- `:proprietary` — components known to be closed source; reported with a `proprietary` status
+  instead of "no license", since their total absence of license metadata is expected, not a data
+  gap.
+- `:reviewed` — components whose license situation (greylisted, unidentified, or no license at
+  all) has already been manually checked and accepted; reported with a `reviewed` status instead.
+  `:reviewed` never overrides a `:blacklist` match -- a blacklisted license stays blocked
+  regardless.
+
+Neither `:proprietary` nor `:reviewed` counts as a policy violation for `--fail-on-violations`.
+
 **Vulnerability policy** (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn))
 — a map with:
 - `:max-severity` — the lowest severity (`:unknown`, `:low`, `:medium`, `:high` or `:critical`)
@@ -116,7 +129,9 @@ entry), each with:
 Each license in a `licenses` report entry carries four explicit fields: `:license-id` (its raw
 identifier, e.g. `"MIT"`), `:license-name` (its SPDX-canonical name, e.g. `"MIT License"`),
 `:license-url` (the official SPDX license detail page, e.g.
-`"https://spdx.org/licenses/MIT.html"`) and `:status` (its whitelist/blacklist status).
+`"https://spdx.org/licenses/MIT.html"`) and `:status` (its policy status: `:white`, `:black`,
+`:grey`, or `:proprietary`/`:no-license`/`:reviewed` per the license policy's `:proprietary`/
+`:reviewed` keys, see "Policy files" above).
 `:license-name`/`:license-url` are resolved against the SPDX license list (`json/licenses.json`
 from [spdx/license-list-data](https://github.com/spdx/license-list-data)) whenever `:license-id`
 is a single id directly recognized by it, and are `nil` otherwise -- e.g. for a compound
