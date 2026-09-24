@@ -11,6 +11,7 @@
             [sbom-tool.adapter.license.spdx :as spdx-license-repo]
             [sbom-tool.adapter.policies :as policy-repo]
             [sbom-tool.adapter.vulnerability.deps-dev :as deps-dev-repo]
+            [sbom-tool.adapter.vulnerability.github-advisory :as github-advisory-repo]
             [sbom-tool.adapter.report.markdown :as markdown-report]
             [sbom-tool.adapter.report.json :as json-report]
             [sbom-tool.application.repository :as repo])
@@ -72,11 +73,12 @@
    ["-D" "--vulnerability-source SOURCE"
     (str "Source for live vulnerability lookups keyed by component purl, one of: "
          (str/join ", " (map name (keys (methods repo/read-vulnerability-sources))))
-         " -- none (default) keeps the tool fully offline; deps-dev makes network calls to https://api.deps.dev")
+         " -- none (default) keeps the tool fully offline; deps-dev makes network calls to https://api.deps.dev; github-advisory makes network calls to https://api.github.com")
     :default :none
     :parse-fn keyword
     :validate [(set (keys (methods repo/read-vulnerability-sources)))
                (str "Must be one of: " (str/join ", " (map name (keys (methods repo/read-vulnerability-sources)))))]]
+   ["-G" "--github-advisory-api-key-file PATH" "Path of an EDN file providing {:api-key \"...\"} for GitHub Advisory Database API requests -- optional (the endpoint answers unauthenticated requests), falls back to the GITHUB_ADVISORY_API_KEY environment variable; raises the rate limit from 60 to 5000 requests/hour"]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
     :default :all-license
     :parse-fn keyword

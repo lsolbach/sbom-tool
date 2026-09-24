@@ -1,0 +1,17 @@
+[
+  {
+    "ghsa_id": "GHSA-p6mc-m468-83gw",
+    "cve_id": "CVE-2020-8203",
+    "summary": "Prototype Pollution in lodash",
+    "description": "Versions of lodash prior to 4.17.19 are vulnerable to Prototype Pollution.",
+    "severity": "high",
+    "html_url": "https://github.com/advisories/GHSA-p6mc-m468-83gw",
+    "vulnerabilities": [
+      {
+        "package": {"ecosystem": "npm", "name": "lodash"},
+        "vulnerable_version_range": "< 4.17.19",
+        "first_patched_version": "4.17.19"
+      }
+    ]
+  }
+]

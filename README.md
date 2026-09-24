@@ -53,7 +53,8 @@ sbom-tool -I sboms -r all-license -o json
 | `-I, --input-path PATH`             | `sboms`    | Folder containing the SBOM files    |
 | `-s, --sbom-format FORMAT`          | `:auto`    | SBOM format to read: `:auto` (every `*.cdx.json` and `*.spdx.json` file), `:cdx` or `:spdx` |
 | `-m, --merge-unidentified`          | `false`    | Also merge components across documents that carry neither a purl nor a cpe, by name/version alone (see "Multi-format consolidation" below) |
-| `-D, --vulnerability-source SOURCE` | `:none`    | Source for live vulnerability lookups keyed by component purl: `:none` (fully offline) or `:deps-dev` (see "Live vulnerability lookups (deps.dev)" below) |
+| `-D, --vulnerability-source SOURCE` | `:none`    | Source for live vulnerability lookups keyed by component purl: `:none` (fully offline), `:deps-dev` (see "Live vulnerability lookups (deps.dev)" below) or `:github-advisory` (see "Live vulnerability lookups (GitHub Advisory Database)" below) |
+| `-G, --github-advisory-api-key-file PATH` | —    | EDN file providing `{:api-key "..."}` for GitHub Advisory Database API requests; optional (the endpoint answers unauthenticated requests), falls back to the `GITHUB_ADVISORY_API_KEY` environment variable; raises the rate limit from 60 to 5000 requests/hour |
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
 | `-L, --spdx-license-list PATH`      | —          | SPDX license list JSON file (`json/licenses.json` from [spdx/license-list-data](https://github.com/spdx/license-list-data)); falls back to a bundled snapshot |
@@ -80,7 +81,7 @@ message.
 **Disclaimer**: The vulnerability reports rely on the information contained in the SBOM files and only report the vulnerabilities known at the time the SBOMs were created.
 When the SBOMs do not contain vulnerability information, no vulnerabilities are reported -- which reads as "no known vulnerabilities" even though the truth is "no data".
 Because of this, the default report (`all-license`) omits vulnerability reports; request `all-vulnerabilities` or `all` explicitly once your SBOMs are known to carry vulnerability data.
-Opting into `-D deps-dev` (see below) supplements this with live lookups, but only for components identified by purl -- it does not replace SBOM-embedded data, and is itself just one vulnerability database among several.
+Opting into `-D deps-dev` or `-D github-advisory` (see below) supplements this with live lookups, but only for components identified by purl -- it does not replace SBOM-embedded data, and each is itself just one vulnerability database among several.
 
 **The SBOM Tool should not be treated as the only measure for vulnerability checks.**
 
@@ -160,6 +161,26 @@ vulnerabilities for this component," so the rest of the report is unaffected. If
 with a TLS/certificate error in a network environment with an intercepting proxy, rerun with
 `-d`/`--debug` and, if needed, point the JVM at the right trust store via
 `-Djavax.net.ssl.trustStore`/`-Djavax.net.ssl.trustStorePassword`.
+
+### Live vulnerability lookups (GitHub Advisory Database)
+
+Passing `-D github-advisory`/`--vulnerability-source github-advisory` opts into supplementing SBOM-
+embedded vulnerability data with live lookups against GitHub's [Advisory
+Database](https://github.com/advisories), keyed by each consolidated component's purl -- like
+deps.dev, components identified only by cpe, or not identified at all, get no enrichment from this.
+Unlike deps.dev, it also covers Composer/Packagist packages. This makes network calls to
+`https://api.github.com`, batched by ecosystem (one or a few requests per distinct ecosystem
+present in the SBOMs, not one per component) rather than one call per purl. A GitHub token is
+optional -- the endpoint answers unauthenticated requests, at 60 requests/hour -- but raises the
+rate limit to 5000/hour; supply one via `-G`/`--github-advisory-api-key-file` (an EDN file shaped
+`{:api-key "..."}`, never committed to the repo) or the `GITHUB_ADVISORY_API_KEY` environment
+variable. Its findings flow through the same `vulnerability` report, `vulnerability-summary`,
+`blocked-vulnerabilities` and `--fail-on-violations` gating as SBOM-embedded ones -- they show up
+identically, just with `"GitHub Advisory Database"` as their `:source`.
+
+A failed lookup (network error, an unrecognized purl type, or an advisory with no usable id) never
+aborts the run: it is logged as a warning on stderr and treated as "no additional vulnerabilities
+for the affected components," so the rest of the report is unaffected.
 
 ### Multi-format consolidation
 
