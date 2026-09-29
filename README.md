@@ -58,7 +58,7 @@ sbom-tool -I sboms -r all-license -o json
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
 | `-L, --spdx-license-list PATH`      | —          | SPDX license list JSON file (`json/licenses.json` from [spdx/license-list-data](https://github.com/spdx/license-list-data)); falls back to a bundled snapshot |
-| `-r, --report REPORT`               | `all-license` | Report to generate: `licenses`, `license-status-summary`, `license-summary`, `multi-licensed`, `unidentified-licenses`, `blacklisted-licenses`, `vulnerabilities`, `vulnerability-summary`, `blocked-vulnerabilities`, `all-license` (every license report), `all-vulnerabilities` (every vulnerability report) or `all` (both) |
+| `-r, --report REPORT`               | `all-license` | Report to generate: `licenses`, `license-status-summary`, `license-summary`, `multi-licensed`, `unidentified-licenses`, `blacklisted-licenses`, `copyright`, `missing-copyright`, `vulnerabilities`, `vulnerability-summary`, `blocked-vulnerabilities`, `all-license` (every license report, which includes both copyright reports), `all-copyrights` (just the copyright reports), `all-vulnerabilities` (every vulnerability report) or `all` (all of the above) |
 | `-o, --output-format FORMAT`        | `edn`      | Output format: `edn`, `json` or `markdown` |
 | `-f, --fail-on-violations`          | `false`    | Exit with status 1 if there are blacklisted licenses or policy-blocked vulnerabilities |
 | `-d, --debug`                       | `false`    | On failure, append the full exception cause chain to the error message, for troubleshooting |
@@ -189,7 +189,7 @@ package (matched by `purl`, falling back to `cpe`) is reported as a single, cons
 component carrying the union of both documents' data — e.g. CycloneDX-reported vulnerabilities
 together with SPDX's `concluded`/`from-files` license detail for the same library. Every
 component-based report entry (`licenses`, `multi-licensed`, `unidentified-licenses`,
-`blacklisted-licenses`, `vulnerabilities`) carries a `:sources` field listing which document
+`blacklisted-licenses`, `copyright`, `missing-copyright`, `vulnerabilities`) carries a `:sources` field listing which document
 formats it was assembled from, and, when the source documents genuinely disagreed on a scalar
 field (e.g. two different `description`s), a `:conflicts` field listing the values that lost
 out — the `markdown` renderer only shows `:sources` as a column; `:conflicts` is visible in the

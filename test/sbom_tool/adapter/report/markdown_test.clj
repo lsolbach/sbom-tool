@@ -132,6 +132,27 @@
       (is (str/includes? markdown "| d | 1 | proprietary |  |  |  |  | cyclonedx |"))
       (is (str/includes? markdown "| e | 1 | reviewed | LicenseRef-custom | LicenseRef-custom | reviewed |  | spdx |"))))
 
+(deftest render-copyright-test
+  (testing "renders one table row per component, with its copyright notice"
+    (let [markdown (markdown/render-report
+                    :copyright
+                    [{:id "pkg:a@1" :name "a-lib" :version "1" :component-type :library
+                      :copyright "Copyright 2024 Acme Corp" :sources [:cyclonedx]}
+                     {:id "pkg:b@1" :name "b-lib" :version "1" :component-type :library
+                      :copyright nil :sources [:spdx]}])]
+      (is (str/includes? markdown "## Copyright"))
+      (is (str/includes? markdown "| Component | Version | Type | Copyright | Sources |"))
+      (is (str/includes? markdown "| a-lib | 1 | library | Copyright 2024 Acme Corp | cyclonedx |"))
+      (testing "a nil :copyright renders as a blank cell"
+        (is (str/includes? markdown "| b-lib | 1 | library |  | spdx |")))))
+  (testing "renders under the Missing Copyright heading using the same table shape"
+    (let [markdown (markdown/render-report
+                    :missing-copyright
+                    [{:id "pkg:b@1" :name "b-lib" :version "1" :component-type :library
+                      :copyright nil :sources [:spdx]}])]
+      (is (str/includes? markdown "## Missing Copyright"))
+      (is (str/includes? markdown "| b-lib | 1 | library |  | spdx |")))))
+
 (deftest render-vulnerabilities-test
   (testing "joins each component's vulnerabilities inline with severity and status"
     (let [markdown (markdown/render-report
@@ -194,6 +215,17 @@
                     {:license-summary {"MIT" 1}})]
       (is (not (str/includes? markdown "## All")))
       (is (str/includes? markdown "## License Summary")))))
+
+(deftest render-all-copyrights-test
+  (testing "renders one heading and body per report in the :all-copyrights bundle, without a wrapping heading"
+    (let [markdown (markdown/render-report
+                    :all-copyrights
+                    {:copyright [{:id "pkg:a@1" :name "a-lib" :version "1" :component-type :library
+                                  :copyright "Copyright 2024 Acme Corp" :sources [:cyclonedx]}]
+                     :missing-copyright []})]
+      (is (not (str/includes? markdown "## All")))
+      (is (str/includes? markdown "## Copyright"))
+      (is (str/includes? markdown "## Missing Copyright")))))
 
 (deftest render-all-vulnerabilities-test
   (testing "renders one heading and body per report in the :all-vulnerabilities bundle, without a wrapping heading"

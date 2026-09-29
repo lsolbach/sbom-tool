@@ -146,6 +146,15 @@
                (:url license)
                (format-sources (:sources entry))])))
 
+(defn- render-copyright
+  [data]
+  (md-table ["Component" "Version" "Type" "Copyright" "Sources"]
+            (for [entry data]
+              [(:name entry) (:version entry)
+               (some-> (:component-type entry) name)
+               (:copyright entry)
+               (format-sources (:sources entry))])))
+
 (defn- render-vulnerabilities
   [data]
   (md-table ["Component" "Version" "Type" "Vulnerabilities" "Sources"]
@@ -179,6 +188,8 @@
    :multi-licensed "Multi-licensed Components"
    :unidentified-licenses "Unidentified Licenses"
    :blacklisted-licenses "Blacklisted Licenses Used"
+   :copyright "Copyright"
+   :missing-copyright "Missing Copyright"
    :vulnerabilities "Vulnerabilities"
    :vulnerability-summary "Vulnerability Summary"
    :blocked-vulnerabilities "Blocked Vulnerabilities"})
@@ -191,15 +202,17 @@
    :multi-licensed render-multi-licensed
    :unidentified-licenses render-unidentified-licenses
    :blacklisted-licenses render-licenses
+   :copyright render-copyright
+   :missing-copyright render-copyright
    :vulnerabilities render-vulnerabilities
    :vulnerability-summary render-vulnerability-summary
    :blocked-vulnerabilities render-blocked-vulnerabilities})
 
 (def ^:private bundle-report-keys
   "Report keys whose data is a map of report key to that report's data, as
-   produced by the CLI's `:all`, `:all-license` and `:all-vulnerabilities`
-   reports."
-  #{:all :all-license :all-vulnerabilities})
+   produced by the CLI's `:all`, `:all-license`, `:all-copyrights` and
+   `:all-vulnerabilities` reports."
+  #{:all :all-license :all-copyrights :all-vulnerabilities})
 
 (defn render-report
   "Renders `report-key`'s `data` as markdown. For a bundle report key (see

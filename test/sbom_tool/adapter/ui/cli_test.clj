@@ -65,3 +65,24 @@
                                                :vulnerability-policy "example-vulnerability-policy.edn"
                                                :fail-on-violations true))]
       (is (= 1 exit-code)))))
+
+(deftest run-copyright-report-test
+  (testing "--report copyright runs without error"
+    (is (nil? (cli/run (assoc base-options :report :copyright)))))
+  (testing "--report missing-copyright runs without error"
+    (is (nil? (cli/run (assoc base-options :report :missing-copyright))))))
+
+(deftest all-license-bundle-includes-copyright-test
+  (testing "the :all-license bundle includes both new copyright reports"
+    (cli/initialize-state base-options)
+    (let [bundle ((:all-license cli/reports))]
+      (is (contains? bundle :copyright))
+      (is (contains? bundle :missing-copyright)))))
+
+(deftest all-copyrights-bundle-test
+  (testing "the :all-copyrights bundle contains just the copyright reports"
+    (cli/initialize-state base-options)
+    (let [bundle ((:all-copyrights cli/reports))]
+      (is (= #{:copyright :missing-copyright} (set (keys bundle))))))
+  (testing "--report all-copyrights runs without error"
+    (is (nil? (cli/run (assoc base-options :report :all-copyrights))))))

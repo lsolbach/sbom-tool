@@ -29,6 +29,27 @@
             (with-provenance component (license/component-report policies spdx-licenses component)))
           (repo/consolidated-components))))
 
+(defn copyright
+  "Returns the copyright report for all consolidated components: each
+   entry's id, name, version and type, plus its resolved copyright notice
+   (nil if no source document asserted one), `:sources` and, when the
+   source documents disagreed, `:conflicts`."
+  []
+  (mapv (fn [component]
+          (with-provenance component
+            {:id (::sbom/id component)
+             :name (::sbom/name component)
+             :version (::sbom/version component)
+             :component-type (::sbom/component-type component)
+             :copyright (::sbom/copyright component)}))
+        (repo/consolidated-components)))
+
+(defn missing-copyright
+  "Returns the copyright report entries (see `copyright`) for components
+   that have no copyright notice asserted by any source document."
+  []
+  (filterv (comp nil? :copyright) (copyright)))
+
 (defn multi-licensed
   "Returns the consolidated components that are multi-licensed, i.e. that
    have more than one license choice -- either because their declared/

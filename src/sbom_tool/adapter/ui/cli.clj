@@ -22,15 +22,26 @@
 (def description
   "Reads SBOMs and reports e.g. licenses.")
 
+(def ^:private all-copyright-reports
+  "The copyright reports bundled by `:all-copyrights`. Also folded into
+   `:all-license` (copyright is license-adjacent and, like license, present
+   in essentially every real SBOM, so it is reported by default rather than
+   opted into) -- this bundle exists so copyright reports can be requested
+   on their own too."
+  (fn []
+    {:copyright (report/copyright)
+     :missing-copyright (report/missing-copyright)}))
+
 (def ^:private all-license-reports
   "The license reports bundled by `:all-license`."
   (fn []
-    {:licenses (report/licenses)
-     :license-status-summary (report/license-status-summary)
-     :license-summary (report/license-summary)
-     :multi-licensed (report/multi-licensed)
-     :unidentified-licenses (report/unidentified-licenses)
-     :blacklisted-licenses (report/blacklisted-licenses)}))
+    (merge {:licenses (report/licenses)
+            :license-status-summary (report/license-status-summary)
+            :license-summary (report/license-summary)
+            :multi-licensed (report/multi-licensed)
+            :unidentified-licenses (report/unidentified-licenses)
+            :blacklisted-licenses (report/blacklisted-licenses)}
+           (all-copyright-reports))))
 
 (def ^:private all-vulnerability-reports
   "The vulnerability reports bundled by `:all-vulnerabilities`. Kept out of
@@ -45,19 +56,24 @@
 
 (def reports
   "Map of `--report` keyword to the no-arg report function it invokes.
-   `:all-license` bundles every license report, `:all-vulnerabilities`
-   bundles every vulnerability report, and `:all` bundles both, each keyed
-   the same way as this map."
+   `:all-license` bundles every license report (which includes every
+   copyright report, see `all-copyright-reports`), `:all-copyrights` bundles
+   just the copyright reports, `:all-vulnerabilities` bundles every
+   vulnerability report, and `:all` bundles all of them, each keyed the
+   same way as this map."
   {:licenses report/licenses
    :license-status-summary report/license-status-summary
    :license-summary report/license-summary
    :multi-licensed report/multi-licensed
    :unidentified-licenses report/unidentified-licenses
    :blacklisted-licenses report/blacklisted-licenses
+   :copyright report/copyright
+   :missing-copyright report/missing-copyright
    :vulnerabilities report/vulnerabilities-by-component
    :vulnerability-summary report/vulnerability-summary
    :blocked-vulnerabilities report/blocked-vulnerabilities
    :all-license all-license-reports
+   :all-copyrights all-copyright-reports
    :all-vulnerabilities all-vulnerability-reports
    :all (fn []
           (merge (all-license-reports) (all-vulnerability-reports)))})

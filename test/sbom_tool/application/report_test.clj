@@ -66,6 +66,51 @@
       (is (= 1 (count result)))
       (is (= "pkg:gpl@1" (:id (first result)))))))
 
+(deftest copyright-test
+  (testing "returns one row per consolidated component, including nil-copyright ones"
+    (let [result (report/copyright)
+          by-id (into {} (map (juxt :id identity)) result)]
+      (is (= #{"pkg:mit@1" "pkg:gpl@1"} (set (keys by-id))))
+      (is (every? (comp nil? :copyright) (vals by-id)))))
+  (testing "carries the resolved copyright notice, name, version and type"
+    (let [component #::sbom{:id "pkg:copy@1" :name "copy-lib" :version "2" :component-type :library
+                             :copyright "Copyright 2024 Acme Corp"}]
+      (reset! repo/state {:sboms [#::sbom{:components [component]}]})
+      (let [entry (first (report/copyright))]
+        (is (= "copy-lib" (:name entry)))
+        (is (= "2" (:version entry)))
+        (is (= :library (:component-type entry)))
+        (is (= "Copyright 2024 Acme Corp" (:copyright entry)))))))
+
+(deftest copyright-consolidation-test
+  (testing "a component described by two documents that disagree on copyright carries both sources and the conflict"
+    (let [purl "pkg:npm/dual-copyright@1"
+          cdx-component #::sbom{:id "cdx-1" :name "dual-copyright" :version "1"
+                                 :identifiers #::sbom{:purl purl}
+                                 :copyright "Copyright 2023 Foo"}
+          spdx-component #::sbom{:id "spdx-1" :name "dual-copyright" :version "1"
+                                  :identifiers #::sbom{:purl purl}
+                                  :copyright "Copyright 2024 Bar"}
+          cdx-sbom #::sbom{:components [cdx-component]
+                            :bom-metadata #::sbom{:format :cyclonedx}}
+          spdx-sbom #::sbom{:components [spdx-component]
+                             :bom-metadata #::sbom{:format :spdx}}]
+      (reset! repo/state {:sboms [cdx-sbom spdx-sbom]})
+      (let [entry (first (report/copyright))]
+        (is (= "Copyright 2023 Foo" (:copyright entry)))
+        (is (= #{:cyclonedx :spdx} (set (:sources entry))))
+        (is (= ["Copyright 2023 Foo" "Copyright 2024 Bar"] (get (:conflicts entry) ::sbom/copyright)))))))
+
+(deftest missing-copyright-test
+  (testing "returns only the components with no resolved copyright notice"
+    (let [copyrighted #::sbom{:id "pkg:copy@1" :name "copy-lib" :version "1"
+                              :copyright "Copyright 2024 Acme Corp"}
+          uncopyrighted #::sbom{:id "pkg:none@1" :name "none-lib" :version "1"}]
+      (reset! repo/state {:sboms [#::sbom{:components [copyrighted uncopyrighted]}]})
+      (let [result (report/missing-copyright)]
+        (is (= 1 (count result)))
+        (is (= "pkg:none@1" (:id (first result))))))))
+
 (def mit-or-apache-component
   #::sbom{:id "pkg:expr@1" :name "expr-lib" :version "1"
           :licenses #::sbom{:declared [#::sbom{:license-id "MIT OR Apache-2.0"}]}})
