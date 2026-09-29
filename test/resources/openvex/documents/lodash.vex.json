@@ -1,0 +1,36 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://example.com/vex/lodash-1",
+  "author": "Example Corp",
+  "timestamp": "2026-01-01T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {"name": "CVE-2020-8203", "aliases": ["GHSA-p6mc-m468-83gw"]},
+      "products": [{"@id": "pkg:npm/lodash@4.17.15"}],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "status_notes": "The vulnerable merge function is never called."
+    },
+    {
+      "vulnerability": {"name": "CVE-2021-0001"},
+      "products": [{"identifiers": {"purl": "pkg:npm/lodash@4.17.20"}}],
+      "status": "fixed"
+    },
+    {
+      "vulnerability": {"name": "CVE-2021-0002"},
+      "products": [{"identifiers": {"cpe23": "cpe:2.3:a:lodash:lodash:4.17.20:*:*:*:*:*:*:*"}}],
+      "status": "affected"
+    },
+    {
+      "vulnerability": {"name": "CVE-2021-0003"},
+      "products": [{"@id": "pkg:npm/lodash@4.17.20"}],
+      "status": "future_status_value"
+    },
+    {
+      "vulnerability": {},
+      "products": [{"@id": "pkg:npm/lodash@4.17.20"}],
+      "status": "affected"
+    }
+  ]
+}

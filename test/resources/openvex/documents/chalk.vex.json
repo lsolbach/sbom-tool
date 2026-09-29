@@ -1,0 +1,14 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://example.com/vex/chalk-1",
+  "author": "Example Corp",
+  "timestamp": "2026-01-02T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {"name": "CVE-2022-0001"},
+      "products": ["pkg:npm/chalk@4.1.0"],
+      "status": "under_investigation"
+    }
+  ]
+}

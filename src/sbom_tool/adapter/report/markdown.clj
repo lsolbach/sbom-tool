@@ -51,7 +51,8 @@
   (when status (get license-status-label status (name status))))
 
 (def ^:private vulnerability-status-label
-  {:ok "ok" :blocked "blocked" :accepted "accepted"})
+  {:ok "ok" :blocked "blocked" :accepted "accepted"
+   :not-affected "not affected (VEX)" :fixed "fixed (VEX)"})
 
 (def ^:private cve-id-pattern
   #"(?i)^CVE-\d{4}-\d{4,}$")
@@ -65,8 +66,11 @@
     id))
 
 (defn- format-vulnerability-entry
-  [{:keys [id severity status]}]
-  (str (format-vulnerability-id id) " (" (name severity) ", " (get vulnerability-status-label status (name status)) ")"))
+  [{:keys [id severity status vex]}]
+  (str (format-vulnerability-id id) " (" (name severity) ", "
+       (get vulnerability-status-label status (name status))
+       (when-let [justification (:justification vex)] (str ": " (name justification)))
+       ")"))
 
 (defn- format-choice-cell
   "Formats one column's value across a license choice (a set of

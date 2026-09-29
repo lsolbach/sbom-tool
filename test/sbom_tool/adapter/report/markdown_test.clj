@@ -171,6 +171,24 @@
       (is (str/includes? markdown
                           "[CVE-2026-71038](https://app.opencve.io/cve/CVE-2026-71038) (high, blocked)")))))
 
+(deftest render-vulnerabilities-vex-test
+  (testing "a VEX-exempted entry shows its VEX label and justification instead of the policy status"
+    (let [markdown (markdown/render-report
+                    :vulnerabilities
+                    [{:id "pkg:a@1" :name "a" :version "1" :component-type :library
+                      :vulnerabilities [{:id "CVE-1" :severity :high :status :not-affected
+                                         :vex {:status :not-affected :justification :vulnerable-code-not-present}}]
+                      :sources [:cyclonedx]}])]
+      (is (str/includes? markdown "CVE-1 (high, not affected (VEX): vulnerable-code-not-present)"))))
+  (testing "an annotation-only VEX entry (affected) keeps the policy status, with no justification suffix"
+    (let [markdown (markdown/render-report
+                    :vulnerabilities
+                    [{:id "pkg:a@1" :name "a" :version "1" :component-type :library
+                      :vulnerabilities [{:id "CVE-1" :severity :high :status :blocked
+                                         :vex {:status :affected}}]
+                      :sources [:cyclonedx]}])]
+      (is (str/includes? markdown "CVE-1 (high, blocked)")))))
+
 (deftest render-vulnerability-summary-test
   (testing "renders severities in a fixed most-to-least-severe order plus the affected count"
     (let [markdown (markdown/render-report

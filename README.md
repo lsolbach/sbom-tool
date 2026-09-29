@@ -55,6 +55,7 @@ sbom-tool -I sboms -r all-license -o json
 | `-m, --merge-unidentified`          | `false`    | Also merge components across documents that carry neither a purl nor a cpe, by name/version alone (see "Multi-format consolidation" below) |
 | `-D, --vulnerability-source SOURCE` | `:none`    | Source for live vulnerability lookups keyed by component purl: `:none` (fully offline), `:deps-dev` (see "Live vulnerability lookups (deps.dev)" below) or `:github-advisory` (see "Live vulnerability lookups (GitHub Advisory Database)" below) |
 | `-G, --github-advisory-api-key-file PATH` | —    | EDN file providing `{:api-key "..."}` for GitHub Advisory Database API requests; optional (the endpoint answers unauthenticated requests), falls back to the `GITHUB_ADVISORY_API_KEY` environment variable; raises the rate limit from 60 to 5000 requests/hour |
+| `-X, --vex-path PATH`               | —          | Folder containing OpenVEX documents (`*.vex.json`) to apply to vulnerability reports (see "VEX (OpenVEX)" below); optional, no VEX is applied unless given |
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
 | `-L, --spdx-license-list PATH`      | —          | SPDX license list JSON file (`json/licenses.json` from [spdx/license-list-data](https://github.com/spdx/license-list-data)); falls back to a bundled snapshot |
@@ -82,6 +83,7 @@ message.
 When the SBOMs do not contain vulnerability information, no vulnerabilities are reported -- which reads as "no known vulnerabilities" even though the truth is "no data".
 Because of this, the default report (`all-license`) omits vulnerability reports; request `all-vulnerabilities` or `all` explicitly once your SBOMs are known to carry vulnerability data.
 Opting into `-D deps-dev` or `-D github-advisory` (see below) supplements this with live lookups, but only for components identified by purl -- it does not replace SBOM-embedded data, and each is itself just one vulnerability database among several.
+Opting into `-X`/`--vex-path` (see "VEX (OpenVEX)" below) can suppress a false positive for a component a supplier has assessed as not actually exploitable, but only for the exact product(s) a matching VEX statement names -- it does not change any other component's report.
 
 **The SBOM Tool should not be treated as the only measure for vulnerability checks.**
 
@@ -181,6 +183,29 @@ identically, just with `"GitHub Advisory Database"` as their `:source`.
 A failed lookup (network error, an unrecognized purl type, or an advisory with no usable id) never
 aborts the run: it is logged as a warning on stderr and treated as "no additional vulnerabilities
 for the affected components," so the rest of the report is unaffected.
+
+### VEX (OpenVEX)
+
+Passing `-X PATH`/`--vex-path PATH` reads every [OpenVEX](https://github.com/openvex/spec)
+document (`*.vex.json`) under `PATH` -- typically one per supplier -- and applies their
+`statements` to the `vulnerabilities` report and `blocked-vulnerabilities`/`--fail-on-violations`
+gating, matched by each statement's vulnerability id (or alias) and product purl/cpe against the
+consolidated component being reported. A `not_affected` or `fixed` statement is authoritative:
+it downgrades that vulnerability's status (shown as `not affected (VEX)`/`fixed (VEX)`, with the
+`not_affected` justification, e.g. `vulnerable_code_not_present`, when given) and excludes it from
+`blocked-vulnerabilities`/`--fail-on-violations` for the product(s) it names -- but only once
+*every* consolidated component the vulnerability affects has such a statement; if it still affects
+even one component with no matching statement, it stays blocked for the whole report. An
+`affected` or `under_investigation` statement is shown alongside the vulnerability as an
+annotation only and never changes its policy status. When more than one document's statements
+disagree on the same vulnerability+product, the more conservative status wins (`affected` >
+`under_investigation` > `fixed` > `not_affected`), so one stale or overly-optimistic
+`not_affected` claim can never suppress another document's genuine `affected` one.
+
+This is a purely local, offline read -- unlike `-D`/`--vulnerability-source`, no network calls
+are made. Unlike those live lookups, a malformed VEX file under `PATH` fails the run (the same
+treatment as a malformed SBOM file), since it is as much "your input" as an SBOM; a `PATH` with
+no `*.vex.json` files at all only warns.
 
 ### Multi-format consolidation
 

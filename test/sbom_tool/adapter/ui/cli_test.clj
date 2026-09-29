@@ -18,6 +18,7 @@
    :license-policy nil
    :vulnerability-policy nil
    :vulnerability-source :none
+   :vex-path nil
    :merge-unidentified false
    :report :all-license
    :output-format :edn

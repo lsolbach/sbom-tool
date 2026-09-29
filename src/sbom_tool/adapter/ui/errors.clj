@@ -48,6 +48,14 @@
   [ex]
   (str "The GitHub Advisory Database API key file " (:path (ex-data ex)) " is not valid EDN: " (ex-message ex)))
 
+(defmethod friendly-message :vex-file-not-found
+  [ex]
+  (str "Could not read the VEX file " (:path (ex-data ex)) ": " (ex-message ex)))
+
+(defmethod friendly-message :malformed-vex-json
+  [ex]
+  (str "The VEX file " (:path (ex-data ex)) " is not valid JSON: " (ex-message ex)))
+
 (defmethod friendly-message :spdx-license-list-not-found
   [ex]
   (str "Could not read the SPDX license list file " (:path (ex-data ex)) ": " (ex-message ex)))

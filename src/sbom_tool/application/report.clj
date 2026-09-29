@@ -3,6 +3,7 @@
             [sbom-tool.domain.component :as component]
             [sbom-tool.domain.license :as license]
             [sbom-tool.domain.sbom :as sbom]
+            [sbom-tool.domain.vex :as vex]
             [sbom-tool.domain.vulnerability :as vulnerability]))
 
 (defn- with-provenance
@@ -167,15 +168,18 @@
    it was assembled from, plus any loaded `repo/external-vulnerabilities`,
    see `sbom-tool.domain.vulnerability/consolidated-component-
    vulnerabilities`): its id, name, version, type, `:sources`, and its
-   vulnerabilities with their policy status (:ok, :blocked or :accepted),
-   sorted by severity, most severe first."
+   vulnerabilities with their policy status (:ok, :blocked, :accepted, or,
+   when a loaded `repo/vex-statements` VEX statement exempts it,
+   :not-affected/:fixed -- see `sbom-tool.domain.vulnerability/
+   vulnerability-entries`), sorted by severity, most severe first."
   []
   (let [policy (repo/vulnerability-policies)
-        external-vulnerabilities (repo/external-vulnerabilities)]
+        external-vulnerabilities (repo/external-vulnerabilities)
+        vex-statements (repo/vex-statements)]
     (->> (repo/consolidated-components)
          (keep (fn [component]
                  (let [report (vulnerability/consolidated-component-report
-                               policy component external-vulnerabilities)]
+                               policy component external-vulnerabilities vex-statements)]
                    (when (seq (:vulnerabilities report))
                      (with-provenance component
                        (update report :vulnerabilities
@@ -194,13 +198,33 @@
                      frequencies)
    :affected-components (count (vulnerabilities-by-component))})
 
+(defn- vex-exempted-ids
+  "Returns the vulnerability ids that a loaded `repo/vex-statements` VEX
+   statement exempts (see `sbom-tool.domain.vex/exempted?`) for **every**
+   consolidated component they affect (see `vulnerabilities-by-component`) --
+   a vulnerability exempted for only some of the components it affects is
+   not included here, since it remains a real risk to the others. This lets
+   `blocked-vulnerabilities`, which has no per-component/purl context of its
+   own, still honor VEX exemptions without resolving `::sbom/affected`
+   component ids back to purls itself."
+  []
+  (->> (vulnerabilities-by-component)
+       (mapcat :vulnerabilities)
+       (group-by :id)
+       (keep (fn [[id entries]] (when (every? (comp vex/exempted? :vex) entries) id)))
+       (into #{})))
+
 (defn blocked-vulnerabilities
   "Returns the vulnerabilities across all SBOMs whose status is `:blocked`
    under the configured vulnerability policy, i.e. at or above the policy's
-   `:max-severity` and not in its `:ignored` accepted-risk set."
+   `:max-severity` and not in its `:ignored` accepted-risk set -- excluding
+   any id that a loaded `repo/vex-statements` VEX statement exempts for
+   every consolidated component it affects (see `vex-exempted-ids`)."
   []
-  (let [policy (repo/vulnerability-policies)]
+  (let [policy (repo/vulnerability-policies)
+        exempted (vex-exempted-ids)]
     (->> (repo/vulnerabilities)
+         (remove #(contains? exempted (::sbom/id %)))
          (filter #(= :blocked (vulnerability/vulnerability-status policy %)))
          (mapv (fn [v] {:id (::sbom/id v)
                         :severity (::sbom/severity v)

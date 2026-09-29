@@ -90,6 +90,14 @@
   []
   (:vulnerability-policies @state))
 
+(defn vex-statements
+  "Returns the loaded VEX statements (see
+   `sbom-tool.adapter.vex.openvex/read-vex-statements`), or nil if
+   `--vex-path` was not given -- callers treat that the same as no matching
+   statements at all."
+  []
+  (:vex-statements @state))
+
 (defn spdx-licenses
   "Returns the loaded SPDX license list (a map of license id to
    `{:name :deprecated? :osi-approved?}`, see

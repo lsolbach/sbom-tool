@@ -12,6 +12,7 @@
             [sbom-tool.adapter.policies :as policy-repo]
             [sbom-tool.adapter.vulnerability.deps-dev :as deps-dev-repo]
             [sbom-tool.adapter.vulnerability.github-advisory :as github-advisory-repo]
+            [sbom-tool.adapter.vex.openvex :as openvex-repo]
             [sbom-tool.adapter.report.markdown :as markdown-report]
             [sbom-tool.adapter.report.json :as json-report]
             [sbom-tool.application.repository :as repo])
@@ -95,6 +96,7 @@
     :validate [(set (keys (methods repo/read-vulnerability-sources)))
                (str "Must be one of: " (str/join ", " (map name (keys (methods repo/read-vulnerability-sources)))))]]
    ["-G" "--github-advisory-api-key-file PATH" "Path of an EDN file providing {:api-key \"...\"} for GitHub Advisory Database API requests -- optional (the endpoint answers unauthenticated requests), falls back to the GITHUB_ADVISORY_API_KEY environment variable; raises the rate limit from 60 to 5000 requests/hour"]
+   ["-X" "--vex-path PATH" "Path of a folder containing OpenVEX documents (*.vex.json) to apply to vulnerability reports -- optional, no VEX is applied unless given"]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
     :default :all-license
     :parse-fn keyword
@@ -161,7 +163,9 @@
   (repo/read-vulnerability-policies options (:vulnerability-policy options))
   (swap! repo/state assoc :spdx-licenses
          (spdx-license-repo/read-license-list (:spdx-license-list options)))
-  (repo/read-vulnerability-sources options (:vulnerability-source options)))
+  (repo/read-vulnerability-sources options (:vulnerability-source options))
+  (swap! repo/state assoc :vex-statements
+         (openvex-repo/read-vex-statements (:vex-path options))))
 
 (defn violations?
   "Returns true if there are any blacklisted licenses or policy-blocked

@@ -236,6 +236,54 @@
     (is (= #{"CVE-2024-0001"}
            (into #{} (map :id) (report/blocked-vulnerabilities))))))
 
+;; VEX integration -- one vulnerability shared by two purl-identified
+;; components, so a VEX statement can exempt one without the other.
+(def shared-cve
+  #::sbom{:id "CVE-2024-7777" :severity :critical :affected ["local-vexed" "local-unvexed"]})
+
+(def vexed-component
+  #::sbom{:id "local-vexed" :name "vexed-lib" :version "1"
+          :identifiers #::sbom{:purl "pkg:npm/vexed@1"}})
+
+(def unvexed-component
+  #::sbom{:id "local-unvexed" :name "unvexed-lib" :version "1"
+          :identifiers #::sbom{:purl "pkg:npm/unvexed@1"}})
+
+(def shared-vex-sbom
+  #::sbom{:components [vexed-component unvexed-component]
+          :vulnerabilities [shared-cve]})
+
+(def not-affected-for-vexed
+  {:vulnerability-id "CVE-2024-7777" :status :not-affected :purls #{"pkg:npm/vexed@1"}})
+
+(def not-affected-for-unvexed
+  {:vulnerability-id "CVE-2024-7777" :status :not-affected :purls #{"pkg:npm/unvexed@1"}})
+
+(deftest vulnerabilities-by-component-vex-test
+  (testing "a matching VEX statement is reflected per component in vulnerabilities-by-component"
+    (reset! repo/state {:vulnerability-policies {:max-severity :high}
+                         :sboms [shared-vex-sbom]
+                         :vex-statements [not-affected-for-vexed]})
+    (let [by-name (into {} (map (fn [e] [(:name e) e])) (report/vulnerabilities-by-component))
+          vexed-entry (first (:vulnerabilities (get by-name "vexed-lib")))
+          unvexed-entry (first (:vulnerabilities (get by-name "unvexed-lib")))]
+      (is (= :not-affected (:status vexed-entry)))
+      (is (= :blocked (:status unvexed-entry))))))
+
+(deftest blocked-vulnerabilities-vex-partial-exemption-test
+  (testing "a vulnerability exempted for only one of its affected components stays blocked"
+    (reset! repo/state {:vulnerability-policies {:max-severity :high}
+                         :sboms [shared-vex-sbom]
+                         :vex-statements [not-affected-for-vexed]})
+    (is (= #{"CVE-2024-7777"} (into #{} (map :id) (report/blocked-vulnerabilities))))))
+
+(deftest blocked-vulnerabilities-vex-full-exemption-test
+  (testing "a vulnerability exempted for every component it affects is excluded from blocked-vulnerabilities"
+    (reset! repo/state {:vulnerability-policies {:max-severity :high}
+                         :sboms [shared-vex-sbom]
+                         :vex-statements [not-affected-for-vexed not-affected-for-unvexed]})
+    (is (= #{} (into #{} (map :id) (report/blocked-vulnerabilities))))))
+
 (def external-only-component
   #::sbom{:id "pkg:npm/external@1" :name "external-lib" :version "1"
           :identifiers #::sbom{:purl "pkg:npm/external@1"}})
