@@ -53,8 +53,9 @@ sbom-tool -I sboms -r all-license -o json
 | `-I, --input-path PATH`             | `sboms`    | Folder containing the SBOM files    |
 | `-s, --sbom-format FORMAT`          | `:auto`    | SBOM format to read: `:auto` (every `*.cdx.json` and `*.spdx.json` file), `:cdx` or `:spdx` |
 | `-m, --merge-unidentified`          | `false`    | Also merge components across documents that carry neither a purl nor a cpe, by name/version alone (see "Multi-format consolidation" below) |
-| `-D, --vulnerability-source SOURCE` | `:none`    | Source for live vulnerability lookups keyed by component purl: `:none` (fully offline), `:deps-dev` (see "Live vulnerability lookups (deps.dev)" below) or `:github-advisory` (see "Live vulnerability lookups (GitHub Advisory Database)" below) |
+| `-D, --vulnerability-source SOURCE` | `:none`    | Source for live vulnerability lookups keyed by component purl: `:none` (fully offline), `:deps-dev` (see "Live vulnerability lookups (deps.dev)" below), `:github-advisory` (see "Live vulnerability lookups (GitHub Advisory Database)" below) or `:osv` (see "Live vulnerability lookups (OSV)" below) |
 | `-G, --github-advisory-api-key-file PATH` | —    | EDN file providing `{:api-key "..."}` for GitHub Advisory Database API requests; optional (the endpoint answers unauthenticated requests), falls back to the `GITHUB_ADVISORY_API_KEY` environment variable; raises the rate limit from 60 to 5000 requests/hour |
+| `-K, --osv-api-key-file PATH`       | —          | EDN file providing `{:api-key "..."}` for OSV API requests; optional, falls back to the `OSV_API_KEY` environment variable; OSV's public API currently requires neither |
 | `-X, --vex-path PATH`               | —          | Folder containing OpenVEX documents (`*.vex.json`) to apply to vulnerability reports (see "VEX (OpenVEX)" below); optional, no VEX is applied unless given |
 | `-l, --license-policy PATH`         | —          | EDN license policy file (see [example-license-policy.edn](example-license-policy.edn)); falls back to the bundled default policy |
 | `-V, --vulnerability-policy PATH`   | —          | EDN vulnerability policy file (see [example-vulnerability-policy.edn](example-vulnerability-policy.edn)); falls back to the bundled default policy |
@@ -82,7 +83,7 @@ message.
 **Disclaimer**: The vulnerability reports rely on the information contained in the SBOM files and only report the vulnerabilities known at the time the SBOMs were created.
 When the SBOMs do not contain vulnerability information, no vulnerabilities are reported -- which reads as "no known vulnerabilities" even though the truth is "no data".
 Because of this, the default report (`all-license`) omits vulnerability reports; request `all-vulnerabilities` or `all` explicitly once your SBOMs are known to carry vulnerability data.
-Opting into `-D deps-dev` or `-D github-advisory` (see below) supplements this with live lookups, but only for components identified by purl -- it does not replace SBOM-embedded data, and each is itself just one vulnerability database among several.
+Opting into `-D deps-dev`, `-D github-advisory` or `-D osv` (see below) supplements this with live lookups, but only for components identified by purl -- it does not replace SBOM-embedded data, and each is itself just one vulnerability database among several.
 Opting into `-X`/`--vex-path` (see "VEX (OpenVEX)" below) can suppress a false positive for a component a supplier has assessed as not actually exploitable, but only for the exact product(s) a matching VEX statement names -- it does not change any other component's report.
 
 **The SBOM Tool should not be treated as the only measure for vulnerability checks.**
@@ -145,10 +146,16 @@ to use a different (e.g. newer) one instead.
 In the `markdown` output format, the License Name column links to `:license-url` when known, so a
 reader can click straight through to the license text.
 
-### Live vulnerability lookups (deps.dev)
+### Live vulnerability lookups
 
 By default, the tool is fully offline: vulnerability reports only ever contain what the SBOM
-documents themselves declared (see the disclaimer above). Passing `-D deps-dev`/
+documents themselves declared (see the disclaimer above).
+
+Live lookups can be enabled with the `-D` flag.
+
+#### deps.dev
+
+Passing `-D deps-dev`/
 `--vulnerability-source deps-dev` opts into supplementing that with live lookups against Google
 [deps.dev](https://deps.dev), keyed by each consolidated component's purl -- deps.dev has no
 cpe or name/version-only lookup, so components identified only by cpe, or not identified at all,
@@ -159,12 +166,9 @@ identically, just with `"deps.dev"` as their `:source`.
 
 A failed lookup (network error, an unrecognized purl type, or an advisory with no usable id)
 never aborts the run: it is logged as a warning on stderr and treated as "no additional
-vulnerabilities for this component," so the rest of the report is unaffected. If lookups fail
-with a TLS/certificate error in a network environment with an intercepting proxy, rerun with
-`-d`/`--debug` and, if needed, point the JVM at the right trust store via
-`-Djavax.net.ssl.trustStore`/`-Djavax.net.ssl.trustStorePassword`.
+vulnerabilities for this component," so the rest of the report is unaffected.
 
-### Live vulnerability lookups (GitHub Advisory Database)
+#### GitHub Advisory Database
 
 Passing `-D github-advisory`/`--vulnerability-source github-advisory` opts into supplementing SBOM-
 embedded vulnerability data with live lookups against GitHub's [Advisory
@@ -182,7 +186,32 @@ identically, just with `"GitHub Advisory Database"` as their `:source`.
 
 A failed lookup (network error, an unrecognized purl type, or an advisory with no usable id) never
 aborts the run: it is logged as a warning on stderr and treated as "no additional vulnerabilities
-for the affected components," so the rest of the report is unaffected.
+for the affected components", so the rest of the report is unaffected.
+
+#### OSV
+
+Passing `-D osv`/`--vulnerability-source osv` opts into supplementing SBOM-embedded vulnerability
+data with live lookups against Google [OSV](https://osv.dev), keyed by each consolidated
+component's purl -- like deps.dev and GitHub Advisory Database, components identified only by cpe,
+or not identified at all, get no enrichment from this. This makes network calls to
+`https://api.osv.dev`: every distinct, versioned purl is resolved to its vulnerability ids in a
+handful of batched `querybatch` requests, and only the *distinct* ids referenced across the whole
+run are then each fetched once. No API key is required today -- OSV's public API is unauthenticated
+-- but one can be supplied for forward compatibility (or a self-hosted/gated OSV-compatible
+endpoint) via `-K`/`--osv-api-key-file` (an EDN file shaped `{:api-key "..."}`, never committed to
+the repo) or the `OSV_API_KEY` environment variable. Its findings flow through the same
+`vulnerability` report, `vulnerability-summary`, `blocked-vulnerabilities` and
+`--fail-on-violations` gating as SBOM-embedded ones -- they show up identically, just with
+`"OSV"` as their `:source`. Severity prefers a record's `database_specific.severity` (GHSA's own
+qualitative rating, populated by a large share of OSV's aggregated sources); when that is absent,
+it falls back to computing a CVSS v3 Base Score from a `CVSS_V3` vector in the record's `severity[]`
+(some Maven/Debian/Alpine-sourced OSV entries only carry this), then to a CVSS v2 Base Score from a
+`CVSS_V2` vector (using CVSS v2's own three-band Low/Medium/High scale, which has no "Critical") --
+`:unknown` only when none of the three is present.
+
+A failed lookup (network error, an unversioned/unsupported purl, or a record with no usable id)
+never aborts the run: it is logged as a warning on stderr and treated as "no additional
+vulnerabilities for the affected components," so the rest of the report is unaffected.
 
 ### VEX (OpenVEX)
 

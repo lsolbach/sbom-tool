@@ -12,6 +12,7 @@
             [sbom-tool.adapter.policies :as policy-repo]
             [sbom-tool.adapter.vulnerability.deps-dev :as deps-dev-repo]
             [sbom-tool.adapter.vulnerability.github-advisory :as github-advisory-repo]
+            [sbom-tool.adapter.vulnerability.osv :as osv-repo]
             [sbom-tool.adapter.vex.openvex :as openvex-repo]
             [sbom-tool.adapter.report.markdown :as markdown-report]
             [sbom-tool.adapter.report.json :as json-report]
@@ -90,12 +91,13 @@
    ["-D" "--vulnerability-source SOURCE"
     (str "Source for live vulnerability lookups keyed by component purl, one of: "
          (str/join ", " (map name (keys (methods repo/read-vulnerability-sources))))
-         " -- none (default) keeps the tool fully offline; deps-dev makes network calls to https://api.deps.dev; github-advisory makes network calls to https://api.github.com")
+         " -- none (default) keeps the tool fully offline; deps-dev makes network calls to https://api.deps.dev; github-advisory makes network calls to https://api.github.com; osv makes network calls to https://api.osv.dev")
     :default :none
     :parse-fn keyword
     :validate [(set (keys (methods repo/read-vulnerability-sources)))
                (str "Must be one of: " (str/join ", " (map name (keys (methods repo/read-vulnerability-sources)))))]]
    ["-G" "--github-advisory-api-key-file PATH" "Path of an EDN file providing {:api-key \"...\"} for GitHub Advisory Database API requests -- optional (the endpoint answers unauthenticated requests), falls back to the GITHUB_ADVISORY_API_KEY environment variable; raises the rate limit from 60 to 5000 requests/hour"]
+   ["-K" "--osv-api-key-file PATH" "Path of an EDN file providing {:api-key \"...\"} for OSV API requests -- optional, falls back to the OSV_API_KEY environment variable; OSV's public API currently requires neither"]
    ["-X" "--vex-path PATH" "Path of a folder containing OpenVEX documents (*.vex.json) to apply to vulnerability reports -- optional, no VEX is applied unless given"]
    ["-r" "--report REPORT" (str "Report to generate, one of: " (str/join ", " (map name (keys reports))))
     :default :all-license
