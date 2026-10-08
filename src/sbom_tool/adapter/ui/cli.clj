@@ -133,6 +133,24 @@
   (println msg)
   (System/exit status))
 
+(def success-exit-code
+  "Process exit code for a successful CLI invocation."
+  0)
+
+(def policy-violation-exit-code
+  "Process exit code for a policy violation (blacklisted licenses or policy-blocked vulnerabilities)."
+  1)
+
+(def runtime-error-exit-code
+  "Process exit code for a runtime/data error."
+  2)
+
+(def cli-usage-error-exit-code
+  "Process exit code for a CLI usage error (bad/missing arguments, or a
+   failed --validate check) -- distinct from both a policy violation (1)
+   and a runtime/data error (errors/runtime-error-exit-code, 2)."
+  3)
+
 (defn validate-args
   "Validate command line arguments `args` according to the given `cli-opts`.
    Either returns a map indicating the program should exit
@@ -193,7 +211,7 @@
       (println data)
       (println (template/render output-format report-key data))))
   (when (and (:fail-on-violations options) (violations?))
-    {:exit-code 1}))
+    {:exit-code policy-violation-exit-code}))
 
 (defn handle
   "Initialize the state and handle the options."
@@ -215,11 +233,11 @@
   (try
     (handle options)
     (catch clojure.lang.ExceptionInfo e
-      {:exit-code errors/runtime-error-exit-code
+      {:exit-code runtime-error-exit-code
        :message (cond-> (errors/friendly-message e)
                   (:debug options) (str "\n\n" (errors/debug-details e)))})
     (catch Exception e
-      {:exit-code errors/runtime-error-exit-code
+      {:exit-code runtime-error-exit-code
        :message (cond-> (str "An unexpected error occurred: " (ex-message e))
                   (:debug options) (str "\n\n" (errors/debug-details e)))})))
 
@@ -229,7 +247,7 @@
   (let [{:keys [options exit-message success]} (validate-args args cli-opts)]
     (if exit-message
       ; a CLI usage error, or --help: print and exit without running anything
-      (exit (if success 0 1) exit-message)
+      (exit (if success success-exit-code cli-usage-error-exit-code) exit-message)
       ; run the requested report, printing any error to stderr
       (let [{:keys [exit-code message]} (run options)]
         (when message

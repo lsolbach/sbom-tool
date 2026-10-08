@@ -70,9 +70,10 @@ sbom-tool -I sboms -r all-license -o json
 
 | Code | Meaning |
 |------|---------|
-| `0`  | Success |
-| `1`  | A CLI usage error (bad/missing arguments, `--help`), or `--fail-on-violations` found a blacklisted license or a policy-blocked vulnerability |
+| `0`  | Success (including `--help`) |
+| `1`  | `--fail-on-violations` found a blacklisted license or a policy-blocked vulnerability, for usage in CI/CD |
 | `2`  | A runtime/data error: an SBOM or policy file could not be read or parsed, or a report could not be rendered |
+| `3`  | A CLI usage error: bad or missing arguments |
 
 ### Troubleshooting
 

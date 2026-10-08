@@ -5,7 +5,8 @@
 
 (def runtime-error-exit-code
   "Process exit code for a runtime/data error (as opposed to a CLI usage
-   error or a policy violation, both of which exit with status 1)."
+   error, sbom-tool.adapter.ui.cli/cli-usage-error-exit-code, or a policy
+   violation, both of which use different codes)."
   2)
 
 (defmulti friendly-message

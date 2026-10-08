@@ -25,6 +25,22 @@
    :fail-on-violations false
    :debug false})
 
+(deftest cli-usage-error-exit-code-test
+  (testing "the CLI usage error exit code is distinct from the policy violation (1) and runtime error (2) codes"
+    (is (= 3 cli/cli-usage-error-exit-code))))
+
+(deftest validate-args-bad-flag-test
+  (testing "an unknown flag is reported as a non-success exit message"
+    (let [{:keys [exit-message success]} (cli/validate-args ["--no-such-flag"] cli/cli-opts)]
+      (is (some? exit-message))
+      (is (not success)))))
+
+(deftest validate-args-help-test
+  (testing "--help is reported as a successful exit message"
+    (let [{:keys [exit-message success]} (cli/validate-args ["--help"] cli/cli-opts)]
+      (is (some? exit-message))
+      (is (true? success)))))
+
 (deftest run-happy-path-test
   (testing "a successful run prints the report and returns nil"
     (is (nil? (cli/run base-options)))))

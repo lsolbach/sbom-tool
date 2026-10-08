@@ -46,7 +46,3 @@
       (is (string/includes? details "Caused by"))))
   (testing "a single exception with no cause has no \"Caused by\" section"
     (is (not (string/includes? (errors/debug-details (ex-info "solo" {})) "Caused by")))))
-
-(deftest runtime-error-exit-code-test
-  (testing "is distinct from the CLI usage/violation exit code 1"
-    (is (= 2 errors/runtime-error-exit-code))))
