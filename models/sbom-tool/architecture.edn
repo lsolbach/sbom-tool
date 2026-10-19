@@ -1,0 +1,50 @@
+;;;;
+;;;; Architecture Model for the SBOM Tool
+;;;;
+#{{:el :system
+   :id :sbom-tool/sbom-tool
+   :name "SBOM Tool"
+   :desc "Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance."}
+
+  {:el :person
+   :id :sbom-tool/user
+   :name "User"
+   :desc "Runs the SBOM Tool CLI to check license and vulnerability compliance of software components."}
+
+  {:el :system
+   :id :sbom-tool/ci-pipeline
+   :external true
+   :name "CI/CD Pipeline"
+   :desc "Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations."}
+
+  {:el :uses
+   :id :sbom-tool/user-uses-generate-license-report
+   :from :sbom-tool/user
+   :to :sbom-tool.usecase/generate-license-report}
+
+  {:el :uses
+   :id :sbom-tool/user-uses-generate-copyright-report
+   :from :sbom-tool/user
+   :to :sbom-tool.usecase/generate-copyright-report}
+
+  {:el :uses
+   :id :sbom-tool/user-uses-generate-vulnerability-report
+   :from :sbom-tool/user
+   :to :sbom-tool.usecase/generate-vulnerability-report}
+
+  {:el :uses
+   :id :sbom-tool/user-uses-define-compliance-policy
+   :from :sbom-tool/user
+   :to :sbom-tool.usecase/define-compliance-policy}
+
+  {:el :uses
+   :id :sbom-tool/user-uses-enforce-policy-gate
+   :from :sbom-tool/user
+   :to :sbom-tool.usecase/enforce-policy-gate}
+
+  {:el :uses
+   :id :sbom-tool/ci-pipeline-uses-enforce-policy-gate
+   :from :sbom-tool/ci-pipeline
+   :to :sbom-tool.usecase/enforce-policy-gate}
+  ;
+  }

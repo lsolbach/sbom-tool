@@ -1,0 +1,75 @@
+;;;;
+;;;; Solution Strategies and Architecture Decisions for the SBOM Tool (arc42 sections 4 and 9)
+;;;;
+#{{:el :decision
+   :id :sbom-tool.decision/implement-in-clojure
+   :name "implement in Clojure"
+   :desc "The tool is implemented in Clojure (currently 1.12.5, see project.clj)."
+   :tags #{"solution strategy"}}
+
+  {:el :decision
+   :id :sbom-tool.decision/clean-architecture-layering
+   :name "adopt Clean Architecture layering"
+   :desc "The codebase is structured as domain/application/adapter layers (src/sbom_tool/domain, application, adapter, see AGENTS.md), keeping SBOM-format and I/O concerns in adapters, independent of the core logic."
+   :tags #{"solution strategy"}}
+
+  {:el :decision
+   :id :sbom-tool.decision/canonical-sbom-model
+   :name "normalize SBOM formats into one canonical model"
+   :desc "Format-specific adapters (CycloneDX, SPDX) must parse into one canonical SBOM model (AGENTS.md), so reporting and policy logic is written once, independent of the input format."
+   :tags #{"solution strategy"}}
+
+  {:el :decision
+   :id :sbom-tool.decision/leiningen-build
+   :name "use Leiningen as the build tool"
+   :desc "Leiningen (project.clj) manages dependencies, runs tests and produces the uberjar."
+   :tags #{"solution strategy"}}
+
+  {:el :decision
+   :id :sbom-tool.decision/multi-runtime-support
+   :name "support uberjar and Babashka execution"
+   :desc "Beyond `lein run`, the tool also runs as a prebuilt uberjar and as a Babashka script (bb.edn), so it can be used without a Leiningen installation (see README.md)."
+   :tags #{"solution strategy"}}
+
+  {:el :decision
+   :id :sbom-tool.decision/separate-exit-codes-per-failure-category
+   :name "separate exit codes per failure category"
+   :desc "Split the CLI's exit code for usage errors from the one for --fail-on-violations policy violations, which previously both exited 1; usage errors, policy violations and runtime/data errors now each have their own code (0/1/2/3, see dev/plans/cli-error-codes.md), forming a stable contract for CI/CD consumers."
+   :tags #{"solution strategy"}}
+
+  {:el :implements
+   :id :sbom-tool.decision/implement-in-clojure-implements-sbom-tool
+   :from :sbom-tool.decision/implement-in-clojure
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.decision/clean-architecture-layering-implements-canonical-sbom-model-goal
+   :from :sbom-tool.decision/clean-architecture-layering
+   :to :sbom-tool.goal/canonical-sbom-model}
+
+  {:el :implements
+   :id :sbom-tool.decision/canonical-sbom-model-implements-canonical-sbom-model-goal
+   :from :sbom-tool.decision/canonical-sbom-model
+   :to :sbom-tool.goal/canonical-sbom-model}
+
+  {:el :implements
+   :id :sbom-tool.decision/canonical-sbom-model-implements-mandated-input-standards
+   :from :sbom-tool.decision/canonical-sbom-model
+   :to :sbom-tool.constraint/mandated-input-standards}
+
+  {:el :implements
+   :id :sbom-tool.decision/leiningen-build-implements-sbom-tool
+   :from :sbom-tool.decision/leiningen-build
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.decision/multi-runtime-support-implements-sbom-tool
+   :from :sbom-tool.decision/multi-runtime-support
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.decision/separate-exit-codes-implements-ci-gate-goal
+   :from :sbom-tool.decision/separate-exit-codes-per-failure-category
+   :to :sbom-tool.goal/ci-gate}
+  ;
+  }

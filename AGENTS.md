@@ -13,9 +13,15 @@ Reads software bill of material (SBOM) files and reports on them.
 
 # Project Structure
 SBOM Tool is a Clojure project using Clean Architecture and is built with Leiningen. The general organization is
-* [Source Code](/src/)
-* [Test Code](/test)
-* [Development Code](/dev)
-* [Classpath Resources](/resources)
+* [Source Code](src)
+* [Test Code](test)
+* [Development Code](dev)
+* [Classpath Resources](resources)
+* [Overarch Model](models)
+* [Overarch Templates](templates)
+* [Tools](tools)
 
 The all project namespaces are prefixed with `sbom-tool`.
+
+# Overarch Model
+Use the `architecture-modelling` skill for model editing and the `architecture-query` skill to answer questions about the architecture of the SBOM Tool (don't rely on the generated documentation in `docs`, it may not be current).

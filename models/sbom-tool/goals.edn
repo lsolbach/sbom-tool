@@ -1,0 +1,184 @@
+;;;;
+;;;; Goals and Non-Goals for the SBOM Tool (arc42 section 1.2)
+;;;;
+#{{:el :goal
+   :id :sbom-tool.goal/canonical-sbom-model
+   :name "canonical SBOM model"
+   :desc "Define a single canonical SBOM model so format-specific adapters (CycloneDX, SPDX, ...) can be added without changing reporting logic."}
+
+  {:el :goal
+   :id :sbom-tool.goal/multi-format-input
+   :name "multi-format SBOM input"
+   :desc "Read CycloneDX 1.6 and SPDX 2.2/2.3 SBOM files, with room to add further formats and versions."}
+
+  {:el :goal
+   :id :sbom-tool.goal/consolidate-components
+   :name "cross-document consolidation"
+   :desc "Merge components describing the same package across multiple SBOM documents (matched by purl, falling back to cpe) into one consolidated view."}
+
+  {:el :goal
+   :id :sbom-tool.goal/license-reporting
+   :name "license reporting"
+   :desc "Report the set of licenses in the SBOMs, licenses per component, and usage of blacklisted or greylisted licenses."}
+
+  {:el :goal
+   :id :sbom-tool.goal/copyright-reporting
+   :name "copyright reporting"
+   :desc "Report resolved copyright notices per component and flag components with missing copyright."}
+
+  {:el :goal
+   :id :sbom-tool.goal/vulnerability-reporting
+   :name "vulnerability reporting"
+   :desc "Report known vulnerabilities per component, from SBOM-embedded data and optional live lookups."}
+
+  {:el :goal
+   :id :sbom-tool.goal/configurable-policy
+   :name "configurable compliance policy"
+   :desc "Make license and vulnerability policies (whitelist/blacklist, severity gates, exemptions) configurable via policy files instead of hardcoded."}
+
+  {:el :goal
+   :id :sbom-tool.goal/ci-gate
+   :name "CI/CD policy gate"
+   :desc "Let a pipeline fail the build on policy violations via a dedicated exit code, distinct from usage and runtime errors."}
+
+  {:el :goal
+   :id :sbom-tool.goal/live-vulnerability-lookup
+   :name "live vulnerability lookups"
+   :desc "Optionally enrich SBOM-embedded vulnerability data with live lookups against deps.dev, GitHub Advisory Database or OSV, keyed by component purl."}
+
+  {:el :goal
+   :id :sbom-tool.goal/vex-suppression
+   :name "VEX-based suppression"
+   :desc "Apply suppliers' OpenVEX statements to downgrade or annotate vulnerabilities assessed as not affected or fixed, without changing any other component's report."}
+
+  {:el :goal
+   :id :sbom-tool.goal/multi-format-output
+   :name "multi-format report output"
+   :desc "Render any report as EDN, JSON or Markdown, for both tooling and human consumption (e.g. PR summaries)."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/not-sbom-generator
+   :name "not an SBOM generator"
+   :desc "The tool only reads and reports on existing SBOM files; it does not create, merge or write out a modified SBOM document."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/not-sole-vulnerability-measure
+   :name "not the sole vulnerability measure"
+   :desc "The SBOM Tool should not be treated as the only measure for vulnerability checks -- it only reports what the SBOMs and optional lookups contain, never a substitute for dedicated scanning."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/not-source-scanner
+   :name "not a source/binary scanner"
+   :desc "The tool consumes pre-generated SBOM files; it does not analyze source trees, build artifacts or container images to produce an SBOM itself."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/no-vulnerability-discovery
+   :name "no vulnerability research"
+   :desc "The tool only surfaces vulnerabilities already published in the SBOM or in its configured lookup sources; it performs no vulnerability research of its own."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/no-cross-run-caching
+   :name "no cross-run caching"
+   :desc "Each invocation is a one-shot, stateless analysis; de-duplication of lookups happens only within a single run, not cached across separate CLI invocations."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/no-cvss-temporal-environmental
+   :name "no CVSS Temporal/Environmental scoring"
+   :desc "CVSS vector parsing and scoring covers Base metrics only; Temporal, Environmental and Supplemental metrics are parsed and ignored, never scored."}
+
+  {:el :non-goal
+   :id :sbom-tool.goal/no-automatic-unidentified-merge
+   :name "no guessed identity merging"
+   :desc "Components carrying neither a purl nor a cpe are never merged across documents by default, since name/version-only matching can wrongly combine unrelated packages; merging them is an explicit opt-in."}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/canonical-sbom-model-goal-for-sbom-tool
+   :from :sbom-tool.goal/canonical-sbom-model
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/multi-format-input-goal-for-sbom-tool
+   :from :sbom-tool.goal/multi-format-input
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/consolidate-components-goal-for-sbom-tool
+   :from :sbom-tool.goal/consolidate-components
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/license-reporting-goal-for-sbom-tool
+   :from :sbom-tool.goal/license-reporting
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/copyright-reporting-goal-for-sbom-tool
+   :from :sbom-tool.goal/copyright-reporting
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/vulnerability-reporting-goal-for-sbom-tool
+   :from :sbom-tool.goal/vulnerability-reporting
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/configurable-policy-goal-for-sbom-tool
+   :from :sbom-tool.goal/configurable-policy
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/ci-gate-goal-for-sbom-tool
+   :from :sbom-tool.goal/ci-gate
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/live-vulnerability-lookup-goal-for-sbom-tool
+   :from :sbom-tool.goal/live-vulnerability-lookup
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/vex-suppression-goal-for-sbom-tool
+   :from :sbom-tool.goal/vex-suppression
+   :to :sbom-tool/sbom-tool}
+
+  {:el :goal-for
+   :id :sbom-tool.goal/multi-format-output-goal-for-sbom-tool
+   :from :sbom-tool.goal/multi-format-output
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/not-sbom-generator-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/not-sbom-generator
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/not-sole-vulnerability-measure-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/not-sole-vulnerability-measure
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/not-source-scanner-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/not-source-scanner
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/no-vulnerability-discovery-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/no-vulnerability-discovery
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/no-cross-run-caching-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/no-cross-run-caching
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/no-cvss-temporal-environmental-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/no-cvss-temporal-environmental
+   :to :sbom-tool/sbom-tool}
+
+  {:el :non-goal-for
+   :id :sbom-tool.goal/no-automatic-unidentified-merge-non-goal-for-sbom-tool
+   :from :sbom-tool.goal/no-automatic-unidentified-merge
+   :to :sbom-tool/sbom-tool}
+  ;
+  }

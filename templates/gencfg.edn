@@ -1,0 +1,137 @@
+;;;;
+;;;; Generation Config
+;;;;
+[;
+ ;;;
+ ;;; Documentation
+ ;;;
+ ;;
+ ;;  Diagram Generation for Views
+ ;;
+
+ ; rendered as graphviz dot 
+ {:view-selection {:els #{:concept-view :process-view :domain-view :model-view}}
+  :template "views/view.dot.cmb"
+  :per-element true
+  :id-as-name true
+  :extension "dot"}
+
+ ; rendered as plantuml WBS
+ {:view-selection {:els #{:deployment-structure-view :organization-structure-view :system-structure-view}}
+  :template "views/structure-view.puml.cmb"
+  :per-element true
+  :id-as-name true
+  :extension "puml"}
+
+ ; rendered as plantuml UML
+ #_{:view-selection {:els #{:code-view :state-machine-view :use-case-view}}
+    :template "views/uml-view.puml.cmb"
+    :per-element true
+    :id-as-name true
+    :extension "puml"}
+
+ ; rendered as Mermaid treemap
+ #_{:view-selection {:els #{:deployment-structure-view :organization-structure-view :system-structure-view}}
+    :template "views/treemap.mm.cmb"
+    :per-element true
+    :id-as-name true
+    :extension "mermaid"}
+
+ ;;
+ ;;  Markdown Generation for Model Elements
+ ;;
+
+ ; every model node except fields and methods
+ {:selection {:model-node? true :!els #{:field :method}}
+  :template "docs/node.md.cmb"
+  :per-element true
+  :id-as-name true
+  :extension "md"}
+
+ ;;
+ ;;  Markdown Generation for Views
+ ;;
+
+ ; list of all views, select every view
+ {:view-selection {}
+  :template "docs/views.md.cmb"
+  :base-name "views"
+  :extension "md"}
+
+ ; list of views per namespace, select every view
+ {:view-selection {}
+  :template "docs/views.md.cmb"
+  :per-namespace true
+  :base-name "views-in-namespace"
+  :extension "md"}
+
+ ; markdown for views with diagrams
+ {:view-selection {:!els #{:glossary-view}}
+  :template "docs/view.md.cmb"
+  :per-element true
+  :id-as-name true
+  :extension "md"}
+
+ ; markdown for the glossary
+ {:view-selection {:el :glossary-view}
+  :template "views/glossary-view.md.cmb"
+  :per-element true
+  :id-as-name true
+  :extension "md"}
+
+ ;;;
+ ;;; Markdown Architecture Documentation
+ ;;;
+ {:selection {:el :system :external? false}
+  :template "docs/arc42.md.cmb"
+  :per-element true
+  :id-as-name true
+  :suffix "_architecture"
+  :extension "md"
+  :protected-area "PA"}
+
+ ;;;
+ ;;; Markdown Reports
+ ;;;
+ #_{:selection {}
+    :template "reports/element-report.md.cmb"
+    :title "Model Elements Report"
+    :base-namespace "reports"
+    :base-name "elements-report"
+    :extension "md"}
+
+ #_{:selection {:el :system}
+    :template "reports/node-report.md.cmb"
+    :title "Systems Report"
+    :base-namespace "reports"
+    :base-name "systems-report"
+    :extension "md"}
+
+ #_{:selection {:el :implements}
+    :template "reports/rel-report.md.cmb"
+    :title "Traceablility Report"
+    :base-namespace "reports"
+    :base-name "traceablility-report"
+    :extension "md"}
+
+ ;;;
+ ;;; Exports
+ ;;;
+ #_{:selection {}
+    :template "exports/model.edn.cmb"
+    :per-namespace true
+    :subdir "export/edn"
+    :base-name "model"
+    :extension "edn"
+    :debug true}
+
+ #_{:view-selection {}
+    :template "exports/views.edn.cmb"
+    :per-namespace true
+    :subdir "export/edn"
+    :base-name "views"
+    :extension "edn"
+    :debug true}
+
+ ;
+ ]

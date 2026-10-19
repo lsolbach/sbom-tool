@@ -1,0 +1,11 @@
+;;;;
+;;;; Views for the SBOM Tool
+;;;;
+#{{:el :use-case-view
+   :id :sbom-tool/use-case-view
+   :title "Use Cases of the SBOM Tool"
+   :layout :left-right
+   :selection {:namespace-prefix "sbom-tool"}
+   :include :relations}
+  ;
+  }

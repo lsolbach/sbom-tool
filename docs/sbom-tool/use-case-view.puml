@@ -1,0 +1,47 @@
+@startuml use-case-view
+
+
+left to right direction
+
+
+
+title Use Cases of the SBOM Tool
+
+usecase "generate copyright report" as (sbomTool_usecase_generateCopyrightReport) #BBBBFF
+actor "CI/CD Pipeline" as sbomTool_ciPipeline
+usecase "analyze SBOM compliance" as (sbomTool_usecase_analyzeSbomCompliance) #FFFFFF
+usecase "look up vulnerabilities" as (sbomTool_usecase_lookupVulnerabilities) #8888DD
+actor "User" as sbomTool_user
+usecase "define compliance policy" as (sbomTool_usecase_defineCompliancePolicy) #BBBBFF
+actor "SBOM Tool" as sbomTool_sbomTool
+usecase "read SBOM" as (sbomTool_usecase_readSbom) #8888DD
+usecase "apply VEX statements" as (sbomTool_usecase_applyVexStatements) #8888DD
+usecase "consolidate components" as (sbomTool_usecase_consolidateComponents) #8888DD
+usecase "render report" as (sbomTool_usecase_renderReport) #8888DD
+usecase "enforce policy gate" as (sbomTool_usecase_enforcePolicyGate) #BBBBFF
+usecase "generate vulnerability report" as (sbomTool_usecase_generateVulnerabilityReport) #BBBBFF
+usecase "classify licenses" as (sbomTool_usecase_classifyLicenses) #8888DD
+usecase "generate license report" as (sbomTool_usecase_generateLicenseReport) #BBBBFF
+usecase "classify vulnerabilities" as (sbomTool_usecase_classifyVulnerabilities) #8888DD
+sbomTool_ciPipeline --> sbomTool_usecase_enforcePolicyGate
+sbomTool_user --> sbomTool_usecase_defineCompliancePolicy
+sbomTool_usecase_applyVexStatements .up.> sbomTool_usecase_generateVulnerabilityReport : extends
+sbomTool_usecase_generateCopyrightReport .down.> sbomTool_usecase_readSbom : include
+sbomTool_user --> sbomTool_usecase_enforcePolicyGate
+sbomTool_usecase_generateVulnerabilityReport .down.> sbomTool_usecase_classifyVulnerabilities : include
+sbomTool_user --> sbomTool_usecase_generateLicenseReport
+sbomTool_usecase_generateVulnerabilityReport .down.> sbomTool_usecase_readSbom : include
+sbomTool_usecase_analyzeSbomCompliance .down.> sbomTool_usecase_generateVulnerabilityReport : include
+sbomTool_usecase_readSbom .down.> sbomTool_usecase_consolidateComponents : include
+sbomTool_usecase_lookupVulnerabilities .up.> sbomTool_usecase_generateVulnerabilityReport : extends
+sbomTool_usecase_analyzeSbomCompliance .down.> sbomTool_usecase_generateLicenseReport : include
+sbomTool_usecase_generateCopyrightReport .down.> sbomTool_usecase_renderReport : include
+sbomTool_user --> sbomTool_usecase_generateCopyrightReport
+sbomTool_usecase_generateLicenseReport .down.> sbomTool_usecase_classifyLicenses : include
+sbomTool_user --> sbomTool_usecase_generateVulnerabilityReport
+sbomTool_usecase_generateVulnerabilityReport .down.> sbomTool_usecase_renderReport : include
+sbomTool_usecase_enforcePolicyGate .up.> sbomTool_usecase_analyzeSbomCompliance : extends
+sbomTool_usecase_analyzeSbomCompliance .down.> sbomTool_usecase_generateCopyrightReport : include
+sbomTool_usecase_generateLicenseReport .down.> sbomTool_usecase_renderReport : include
+sbomTool_usecase_generateLicenseReport .down.> sbomTool_usecase_readSbom : include
+@enduml

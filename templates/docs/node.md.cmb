@@ -1,0 +1,872 @@
+<%
+;;;;
+;;;; Markdown Documentation Template for a Model Node
+;;;;
+;;;; config:
+;;;;  :per-element true
+;;;;  :id-as-name  true
+;;;;
+
+(require '[lib.text :as t])
+(require '[lib.markdown :as md])
+
+;;;
+;;; definitions
+;;;
+
+(def type->name
+  "Maps an element type to a display name."
+  {:person   "Person/Role"
+   :use-case "Use Case"
+   :context-boundary "Subdomain/Bounded Context"
+   :subject "Subject"
+   :type "Type"})
+
+;;;
+;;; generic node markdown documentation
+;;;
+
+(let [referring-nodes (m/referring-nodes model e {})
+      referred-nodes (m/referred-nodes model e {})
+      referring-relations (m/referring-relations model e {})
+      referred-relations (m/referred-relations model e {})
+      parent (first (m/referred-nodes model e {:el :contained-in}))
+      children (m/referring-nodes model e {:el :contained-in})
+      implements (m/referred-nodes model e {:el :implements})
+      implemented-by (m/referring-nodes model e {:el :implements})
+      responsible-for (m/referred-nodes model e {:el :responsible-for})
+      responsibility-of (m/referring-nodes model e {:el :responsible-for})
+      required-for (m/referred-nodes model e {:el :required-for})
+      requires (m/referring-nodes model e {:el :required-for})
+      role-in (m/referred-nodes model e {:el :role-in})
+      roles (m/referring-nodes model e {:el :role-in})
+      instance-of (m/referred-nodes model e {:el :instance-of})
+      instances (m/referring-nodes model e {:el :instance-of})
+      version-of (m/referred-nodes model e {:el :version-of})
+      versions (m/referring-nodes model e {:el :version-of})
+      ]
+%>
+# <%= (:name e) %> (<%= (m/element-type e) %>)
+## Description
+<%= (:desc e) %>
+
+<%
+  (when parent
+%>## Parent
+<%= (md/relative-element-link e parent) %>
+<%
+  )
+
+  (when (:tech e)
+%>
+## Technology
+<%= (str/join ", " (:tech e)) %>
+<%
+  )
+
+  (when (seq (:tags e))
+%>
+## Tags
+<%= (str/join ", " (:tags e)) %>
+<%
+  )
+
+  (when (:doc e)
+%>
+## Documentation
+<%= (:doc e) %>
+<%
+  )
+
+  (when-let [doc-links (:doc/links e)]
+%>
+## Links
+<%
+     (doseq [[k v] doc-links]
+%>* [<%= k %>](<%= v %>)
+<%
+    )
+  )
+
+
+;;;
+;;; general relations
+;;;
+
+;;
+;; implements/implemented by
+;;
+
+  (when-let [processes (seq (filter #(= :process (:el %)) implemented-by))]
+%>
+## Implementing Processes
+<%= (md/node-description-table e :process processes) %>
+<%
+  )
+
+  (when-let [processes (seq (filter #(= :process (:el %)) implements))]
+%>
+## Implemented Processes
+<%= (md/node-description-table e :process processes) %>
+<%
+  )
+
+  (when-let [use-cases (seq (filter #(= :use-case (:el %)) implemented-by))]
+%>
+## Implementing Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [use-cases (seq (filter #(= :use-case (:el %)) implements))]
+%>
+## Implemented Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [requirements (seq (filter #(= :requirement (:el %)) implemented-by))]
+%>
+## Implementing Requirements
+<%= (md/node-description-table e :requirement requirements) %>
+<%
+  )
+
+  (when-let [requirements (seq (filter #(= :requirement (:el %)) implements))]
+%>
+## Implemented Requirements
+<%= (md/node-description-table e :requirement requirements) %>
+<%
+  )
+
+  (when-let [decisions (seq (filter #(= :decision (:el %)) implemented-by))]
+%>
+## Implementing Decisions
+<%= (md/node-description-table e :decision decisions) %>
+<%
+  )
+
+  (when-let [decisions (seq (filter #(= :decision (:el %)) implements))]
+%>
+## Implemented Decisions
+<%= (md/node-description-table e :decision decisions) %>
+<%
+  )
+
+  (when-let [state-machines (seq (filter #(= :state-machine (:el %)) implemented-by))]
+%>
+## Implementing State Machines
+<%= (md/node-description-table e :state-machine state-machines) %>
+<%
+  )
+
+  (when-let [state-machines (seq (filter #(= :state-machine (:el %)) implements))]
+%>
+## Implemented State Machines
+<%= (md/node-description-table e :state-machine state-machines) %>
+<%
+  )
+
+
+;;
+;; roles
+;;
+
+  (when (seq roles)
+%>
+## Roles
+<%= (md/node-description-table e :person roles) %>
+<%
+  )
+
+  (when-let [processes (seq (filter #(= :process (:el %)) role-in))]
+%>
+## Role in Processes
+<%= (md/node-description-table e :process processes) %>
+<%
+  )
+
+  (when-let [organizations (seq (filter #(= :organization (:el %)) role-in))]
+%>
+## Role in Organizations
+<%= (md/node-description-table e :organization organizations) %>
+<%
+  )
+
+  (when-let [org-units (seq (filter #(= :org-unit (:el %)) role-in))]
+%>
+## Role in Organization Units
+<%= (md/node-description-table e :org-unit org-units) %>
+<%
+  )
+
+
+;;
+;; responsibilties
+;;
+
+  (when-let [responsibilities (seq (filter #(= :context-boundary (:el %)) responsible-for))]
+%>
+## Responsibility for Bounded Contexts
+<%= (md/node-description-table e :context-boundary responsibilities) %>
+<%
+  )
+
+  (when-let [responsibilities (seq (filter #(= :systems (:el %)) responsible-for))]
+%>
+## Responsibility for Systems
+<%= (md/node-description-table e :system responsibilities) %>
+<%
+  )
+
+  (when-let [responsibilities (seq (filter #(= :container (:el %)) responsible-for))]
+%>
+## Responsibility for Containers
+<%= (md/node-description-table e :container responsibilities) %>
+<%
+  )
+
+  (when-let [responsibilities (seq (filter #(= :capability (:el %)) responsible-for))]
+%>
+## Responsibility for Capabilities
+<%= (md/node-description-table e :capability responsibilities) %>
+<%
+  )
+
+  (when-let [responsibilities (seq (filter #(= :organization (:el %)) responsibility-of))]
+%>
+## Responsibility of Organization
+<%= (md/node-description-table e :organization responsibilities) %>
+<%
+  )
+
+  (when-let [responsibilities (seq (filter #(= :org-unit (:el %)) responsibility-of))]
+%>
+## Responsibility of Organization Unit
+<%= (md/node-description-table e :org-unit responsibilities) %>
+<%
+  )
+
+
+;;
+;; requirements
+;;
+
+  (when-let [requirements (seq (filter #(= :capability (:el %)) required-for))]
+%>
+## Required for Capabilities
+<%= (md/node-description-table e :capability requirements) %>
+<%
+  )
+
+
+;;;
+;;; children in containment hierarchy
+;;;
+
+;;
+;; concepts
+;;
+  (when-let [concepts (seq (filter #(= :concept (:el %)) children))]
+%>## Concepts
+<%= (md/node-description-table e :concept concepts) %>
+<%
+  )
+
+
+;;
+;; organizations/org-units
+;;
+  (when-let [organizations (seq (filter #(= :organization (:el %)) children))]
+%>
+## Sub Organizations
+<%= (md/node-description-table e :organization organizations) %>
+<%
+  )
+
+  (when-let [org-units (seq (filter #(= :org-unit (:el %)) children))]
+%>
+## Sub Units
+<%= (md/node-description-table e :org-unit org-units) %>
+<%
+  )
+
+
+;;
+;; boundaries
+;;
+  (when-let [enterprise-boundaries (seq (filter #(= :enterprise-boundary (:el %)) children))]
+%>
+## Enterprise Boundaries
+<%= (md/node-description-table e :enterprise-boundary enterprise-boundaries) %>
+<%
+  )
+
+  (when-let [bounded-contexts (seq (filter #(= :context-boundary (:el %)) children))]
+%>
+## Subdomains/Bounded Contexts
+<%= (md/node-description-table e :context-boundary bounded-contexts) %>
+<%
+  )
+
+
+;;
+;; technical architecture
+;;
+  (when-let [systems (seq (filter #(= :systems (:el %)) children))]
+%>## Systems
+<%= (md/node-description-table e :system systems) %>
+<%
+  )
+
+  (when-let [containers (seq (filter #(= :container (:el %)) children))]
+%>## Containers
+<%= (md/node-description-table e :container containers) %>
+<%
+  )
+
+  (when-let [components (seq (filter #(= :component (:el %)) children))]
+%>## Components
+<%= (md/node-description-table e :component components) %>
+<%
+  )
+
+
+;;
+;; code
+;;
+  (when-let [packages (seq (filter #(= :package (:el %)) children))]
+%>## Packages
+<%= (md/node-description-table e :package packages) %>
+<%
+  )
+
+  (when-let [interfaces (seq (filter #(= :interface (:el %)) children))]
+%>## Interfaces
+<%= (md/node-description-table e :interface interfaces) %>
+<%
+  )
+
+  (when-let [classes (seq (filter #(= :class (:el %)) children))]
+%>## Classes
+<%= (md/node-description-table e :class classes) %>
+<%
+  )
+
+
+;;
+;; deployment
+;;
+
+  (when-let [nodes (seq (filter #(= :node (:el %)) children))]
+%>## Nodes
+<%= (md/node-description-table e :node nodes) %>
+<%
+  )
+
+
+;;
+;; state machines
+;;
+  (when-let [states (seq (filter #(= :start-state (:el %)) children))]
+%>## Start States
+<%= (md/node-description-table e :start-state states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :state (:el %)) children))]
+%>## States
+<%= (md/node-description-table e :state states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :end-state (:el %)) children))]
+%>## End States
+<%= (md/node-description-table e :end-state states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :history-state (:el %)) children))]
+%>## History States
+<%= (md/node-description-table e :history-state states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :deep-history-state (:el %)) children))]
+%>## Deep History States
+<%= (md/node-description-table e :deep-history-state states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :choice (:el %)) children))]
+%>## Choices
+<%= (md/node-description-table e :choice states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :fork (:el %)) children))]
+%>## Forks
+<%= (md/node-description-table e :fork states) %>
+<%
+  )
+
+  (when-let [states (seq (filter #(= :join (:el %)) children))]
+%>## Joins
+<%= (md/node-description-table e :join states) %>
+<%
+  )
+
+
+;;;
+;;; specific relations
+;;;
+
+;;
+;; concepts
+;;
+
+  (when-let [concepts (seq (m/referred-nodes model e {:el :is-a}))]
+%>## Superordinates
+<%= (md/node-description-table e :concept concepts) %>
+<%
+  )
+
+  (when-let [concepts (seq (m/referring-nodes model e {:el :is-a}))]
+%>## Subordinates
+<%= (md/node-description-table e :concept concepts) %>
+<%
+  )
+
+  (when-let [concepts (seq (m/referred-nodes model e {:el :has}))]
+%>## Features
+<%= (md/node-description-table e :concept concepts) %>
+<%
+  )
+
+  (when-let [concepts (seq (m/referring-nodes model e {:el :has}))]
+%>## Feature of
+<%= (md/node-description-table e :concept concepts) %>
+<%
+  )
+
+  (when-let [relations (seq (concat (m/referring-relations model e {:el :rel}) (m/referred-relations model e {:el :rel})) )]
+%>## Other Relations
+<%= (md/relation-description-table model e relations) %>
+<%
+  )
+
+
+;;
+;; use cases
+;;
+
+  (when-let [actors (seq (m/referring-nodes model e {:el :uses}))]
+%>## Actors
+<%= (md/node-description-table e :actor actors) %>
+<%
+  )
+
+  (when-let [use-cases (seq (m/referred-nodes model e {:el :uses}))]
+%>## Actor in Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [use-cases (seq (m/referring-nodes model e {:el :includes}))]
+%>## Including Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [use-cases (seq (m/referred-nodes model e {:el :includes}))]
+%>## Included Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [use-cases (seq (m/referring-nodes model e {:el :includes}))]
+%>## Including Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [use-cases (seq (m/referred-nodes model e {:el :extends}))]
+%>## Extended Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+  (when-let [use-cases (seq (m/referring-nodes model e {:el :extends}))]
+%>## Extending Use Cases
+<%= (md/node-description-table e :use-case use-cases) %>
+<%
+  )
+
+
+;;
+;; processes
+;;
+
+  (when-let [inputs (seq (m/referring-nodes model e {:el :input-for}))]
+%>## Input Artifacts
+<%= (md/node-description-table e :artifact inputs) %>
+<%
+  )
+
+  (when-let [processes (seq (m/referred-nodes model e {:el :input-for}))]
+%>## Input of
+<%= (md/node-description-table e :process processes) %>
+<%
+  )
+
+  (when-let [outputs (seq (m/referring-nodes model e {:el :output-for}))]
+%>## Output Artifacts
+<%= (md/node-description-table e :artifact outputs) %>
+<%
+  )
+
+  (when-let [processes (seq (m/referred-nodes model e {:el :output-for}))]
+%>## Output of
+<%= (md/node-description-table e :process processes) %>
+<%
+  )
+
+
+;;
+;; artifacts 
+;;
+
+  (when-let [artifacts (seq (m/referring-nodes model e {:el :artifact-of}))]
+%>## Artifacts
+<%= (md/node-description-table e :artifact artifacts) %>
+<%
+  )
+
+  (when-let [subject (seq (m/referred-nodes model e {:el :artifact-of}))]
+%>## Artifact of
+<%= (md/node-description-table e :subject subject) %>
+<%
+  )
+
+;;
+;; versions
+;;
+
+  (when-let [versions (seq (m/referring-nodes model e {:el :version-of}))]
+%>## Versions
+<%= (md/node-description-table e :version versions) %>
+<%
+  )
+
+  (when-let [artifacts (seq (m/referred-nodes model e {:el :version-of}))]
+%>## Version of
+<%= (md/node-description-table e :artifact artifacts) %>
+<%
+  )
+
+
+;;
+;; architecture
+;;
+
+  (when-let [requests (seq (m/referring-relations model e {:el :request}))]
+%>## Incoming Synchronous Requests 
+<%= (md/technical-relation-description-table model e requests) %>
+<%
+  )
+
+  (when-let [requests (seq (m/referred-relations model e {:el :request}))]
+%>## Outgoing Synchronous Requests 
+<%= (md/technical-relation-description-table model e requests) %>
+<%
+  )
+
+  (when-let [publishes (seq (m/referring-relations model e {:el :publish}))]
+%>## Incoming Asynchronous Publish/Produce 
+<%= (md/technical-relation-description-table model e publishes) %>
+<%
+  )
+
+  (when-let [publishes (seq (m/referred-relations model e {:el :publish}))]
+%>## Outgoing Asynchronous Publish/Produce
+<%= (md/technical-relation-description-table model e publishes) %>
+<%
+  )
+
+  (when-let [subscribes (seq (m/referring-relations model e {:el :subscribe}))]
+%>## Incoming Asynchronous Subscribe/Consume 
+<%= (md/technical-relation-description-table model e subscribes) %>
+<%
+  )
+
+  (when-let [subscribes (seq (m/referred-relations model e {:el :subscribe}))]
+%>## Outgoing Asynchronous Subscribe/Consume
+<%= (md/technical-relation-description-table model e subscribes) %>
+<%
+  )
+
+  (when-let [sends (seq (m/referring-relations model e {:el :send}))]
+%>## Incoming Asynchronous Sends
+<%= (md/technical-relation-description-table model e sends) %>
+<%
+  )
+
+  (when-let [sends (seq (m/referred-relations model e {:el :send}))]
+%>## Outgoing Asynchronous Sends
+<%= (md/technical-relation-description-table model e sends) %>
+<%
+  )
+
+  (when-let [dataflows (seq (m/referring-relations model e {:el :dataflow}))]
+%>## Incoming Dataflows
+<%= (md/technical-relation-description-table model e dataflows) %>
+<%
+  )
+
+  (when-let [dataflows (seq (m/referred-relations model e {:el :dataflow}))]
+%>## Outgoing Dataflows
+<%= (md/technical-relation-description-table model e dataflows) %>
+<%
+  )
+
+
+;;
+;; instances
+;;
+
+  (when-let [instances (seq (m/referring-nodes model e {:el :instance-of}))]
+%>## Instances
+<%= (md/node-description-table e :version instances) %>
+<%
+  )
+
+  (when-let [subject (seq (m/referred-nodes model e {:el :instance-of}))]
+%>## Instance of
+<%= (md/node-description-table e :type subject) %>
+<%
+  )
+
+;;
+;; deployment
+;;
+
+  (when-let [links (seq (concat (m/referring-relations model e {:el :link}) (m/referred-relations model e {:el :link})))]
+%>## Links to
+<%= (md/technical-relation-description-table model e links) %>
+<%
+  )
+
+  (when-let [containers (seq (m/referring-nodes model e {:el :deployed-to}))]
+%>## Deployed Containers
+<%= (md/node-description-table e :container containers) %>
+<%
+  )
+
+  (when-let [nodes (seq (m/referred-nodes model e {:el :deployed-to}))]
+%>## Deployed to
+<%= (md/node-description-table e :node nodes) %>
+<%
+  )
+
+;;
+;; code (TODO add functions, enums, ...)
+;;
+
+  (when-let [interfaces (seq (m/interfaces model e))]
+%>
+## Extended/Implemented Interfaces
+<%= (str/join ", " (map #(md/relative-element-link e %) interfaces)) %>
+<%
+  )
+
+  (when-let [superclasses (seq (m/superclasses model e))]
+%>
+## Superclasses
+<%= (str/join ", " (map #(md/relative-element-link e %) superclasses)) %>
+<%
+  )
+
+  (when-let [subclasses  (seq (m/subclasses model e))]
+%>
+## Subclasses
+<%= (str/join ", " (map #(md/relative-element-link e %) subclasses)) %>
+<%
+  )
+
+  (when-let [fields (seq (filter #(= :field (:el %)) children))]
+%>
+## Fields
+<%
+    (doseq [field (sort-by :name fields)]
+%>### <%= (:name field) %>
+<%= (:type field) %> <%= (:name field) %>
+ 
+<%= (t/single-line (:desc field)) %>
+<%
+    ))
+
+  (when-let [methods (seq (filter #(= :method (:el %)) children))]
+%>
+## Methods
+<%
+    (doseq [method (sort-by :name methods)]
+      (let [parameters (m/children model e)]
+%>###  <%= (:name method) %>
+<%= (:type method) %> <%= (:name method) %>(<%= (str/join ", " (map :name parameters)) %>)
+
+<%= (t/single-line (:desc method)) %>
+<%
+      )))
+
+;;;
+;;; diagrams
+;;;
+
+;;
+;; concepts
+;;
+
+  (when 
+    (and (contains? #{:concept} (:el e)) (m/resolve-view model e "concept-view"))
+%>
+## Concept Map
+<%= (md/relative-diagram-link e (m/resolve-view model e "concept-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "concept-view")) %>
+<%
+  )
+
+;;
+;; processes
+;;
+
+  (when 
+    (and (contains? #{:process} (:el e)) (m/resolve-view model e "process-view"))
+%>
+## Use Case View
+<%= (md/relative-diagram-link e (m/resolve-view model e "process-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "process-view")) %>
+<%
+  )
+
+;;
+;; use cases
+;;
+
+  (when 
+    (and (contains? #{:use-case} (:el e)) (m/resolve-view model e "use-case-view"))
+%>
+## Use Case View
+<%= (md/relative-diagram-link e (m/resolve-view model e "use-case-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "use-case-view")) %>
+<%
+  )
+
+;;
+;; architecture
+;;
+
+    (when (and (contains? #{:system} (:el e))
+               (m/resolve-view model e "context-view"))
+%>
+## System Context View
+<%= (md/relative-diagram-link e (m/resolve-view model e "context-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "context-view")) %>
+<%
+    )
+  
+  (when (and (contains? #{:system} (:el e))
+             (m/resolve-view model e "system-structure-view"))
+%>
+## System Structure
+<%= (md/relative-view-link e (m/resolve-view model e "system-structure-view")) %>
+<%
+  )
+
+    (when (and (contains? #{:context-boundary :container} (:el e))
+               (m/resolve-view model e "container-view"))
+%>
+## Container View
+<%= (md/relative-diagram-link e (m/resolve-view model e "container-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "container-view")) %>
+<%
+    )
+
+    (when (and (contains? #{:component} (:el e))
+               (m/resolve-view model e "component-view"))
+%>
+## Component View
+<%= (md/relative-diagram-link e (m/resolve-view model e "component-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "component-view")) %>
+<%
+    )
+
+;;
+;; code 
+;;
+
+  (when 
+    (and (contains? #{:package :class :interface} (:el e)) (m/resolve-view model e "code-view"))
+%>
+## Code View
+<%= (md/relative-diagram-link e (m/resolve-view model e "code-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "code-view")) %>
+<%
+  )
+
+;;
+;; deployment
+;;
+
+  (when 
+    (and (contains? #{:node} (:el e)) (m/resolve-view model e "deployment-view"))
+%>
+
+## Deployment
+<%= (md/relative-diagram-link e (m/resolve-view model e "deployment-view")) %>
+
+<%= (md/relative-view-link e (m/resolve-view model e "deployment-view")) %>
+<%
+  )
+
+  (when 
+    (and (contains? #{:node} (:el e)) (m/resolve-view model e "deployment-structure-view"))
+%>
+
+## Deployment Structure
+<%= (md/relative-view-link e (m/resolve-view model e "deployment-structure-view")) %>
+<%
+  )
+
+;;
+;; organization
+;;
+
+  (when 
+    (and (contains? #{:organization :org-unit} (:el e)) (m/resolve-view model e "organization-structure-view"))
+%>
+
+## Organization Structure
+<%= (md/relative-diagram-link e (m/resolve-view model e "organization-structure-view")) %>
+<%= (md/relative-view-link e (m/resolve-view model e "organization-structure-view")) %>
+<%
+  )
+
+%>
+
+## Navigation
+<%= (md/file-link "./views-in-namespace.md" "List of views in namespace") %>
+
+<%= (md/relative-file-link e "views.md" "List of all Views") %>
+<%
+
+) ; end of let
+%>
+
+(generated by [Overarch](https://github.com/soulspace-org/overarch) with template <%= (:template ctx) %>)

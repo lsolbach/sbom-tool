@@ -1,0 +1,157 @@
+;;;;
+;;;; Use Case Model for the SBOM Tool
+;;;;
+#{{:el :use-case
+   :id :sbom-tool.usecase/analyze-sbom-compliance
+   :level :summary
+   :name "analyze SBOM compliance"
+   :desc "Check the licenses and known vulnerabilities of the components in one or more SBOMs against compliance policies."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/generate-license-report
+   :level :user-goal
+   :name "generate license report"
+   :desc "Report on component licenses: per-component status, summaries, multi-licensed, unidentified and blacklisted licenses."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/generate-copyright-report
+   :level :user-goal
+   :name "generate copyright report"
+   :desc "Report on resolved copyright notices per component and components with missing copyright."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/generate-vulnerability-report
+   :level :user-goal
+   :name "generate vulnerability report"
+   :desc "Report on known vulnerabilities per component, including summaries and policy-blocked vulnerabilities."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/define-compliance-policy
+   :level :user-goal
+   :name "define compliance policy"
+   :desc "Define license and vulnerability policy files: whitelists/blacklists, severity gates and exemptions."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/enforce-policy-gate
+   :level :user-goal
+   :name "enforce policy gate"
+   :desc "Fail the process when a policy violation is found, so a build pipeline can block on non-compliant components."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/read-sbom
+   :level :subfunction
+   :name "read SBOM"
+   :desc "Parse one or more CycloneDX or SPDX SBOM files into the canonical SBOM model."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/consolidate-components
+   :level :subfunction
+   :name "consolidate components"
+   :desc "Merge components describing the same package across multiple SBOM files by package URL."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/classify-licenses
+   :level :subfunction
+   :name "classify licenses"
+   :desc "Classify each component license as whitelisted, blacklisted or grey-listed per the license policy."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/lookup-vulnerabilities
+   :level :subfunction
+   :name "look up vulnerabilities"
+   :desc "Look up known vulnerabilities for a component's package URL from deps.dev, GitHub Advisory Database or OSV."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/apply-vex-statements
+   :level :subfunction
+   :name "apply VEX statements"
+   :desc "Apply OpenVEX statements to downgrade or annotate vulnerabilities found not affected or already fixed."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/classify-vulnerabilities
+   :level :subfunction
+   :name "classify vulnerabilities"
+   :desc "Classify each vulnerability as ok, blocked, accepted or not affected per the vulnerability policy."}
+
+  {:el :use-case
+   :id :sbom-tool.usecase/render-report
+   :level :subfunction
+   :name "render report"
+   :desc "Render the generated report as EDN, JSON or Markdown."}
+
+  {:el :include
+   :id :sbom-tool.usecase/analyze-sbom-compliance-includes-generate-license-report
+   :from :sbom-tool.usecase/analyze-sbom-compliance
+   :to :sbom-tool.usecase/generate-license-report}
+
+  {:el :include
+   :id :sbom-tool.usecase/analyze-sbom-compliance-includes-generate-copyright-report
+   :from :sbom-tool.usecase/analyze-sbom-compliance
+   :to :sbom-tool.usecase/generate-copyright-report}
+
+  {:el :include
+   :id :sbom-tool.usecase/analyze-sbom-compliance-includes-generate-vulnerability-report
+   :from :sbom-tool.usecase/analyze-sbom-compliance
+   :to :sbom-tool.usecase/generate-vulnerability-report}
+
+  {:el :extends
+   :id :sbom-tool.usecase/enforce-policy-gate-extends-analyze-sbom-compliance
+   :from :sbom-tool.usecase/enforce-policy-gate
+   :to :sbom-tool.usecase/analyze-sbom-compliance}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-license-report-includes-read-sbom
+   :from :sbom-tool.usecase/generate-license-report
+   :to :sbom-tool.usecase/read-sbom}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-license-report-includes-classify-licenses
+   :from :sbom-tool.usecase/generate-license-report
+   :to :sbom-tool.usecase/classify-licenses}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-license-report-includes-render-report
+   :from :sbom-tool.usecase/generate-license-report
+   :to :sbom-tool.usecase/render-report}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-copyright-report-includes-read-sbom
+   :from :sbom-tool.usecase/generate-copyright-report
+   :to :sbom-tool.usecase/read-sbom}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-copyright-report-includes-render-report
+   :from :sbom-tool.usecase/generate-copyright-report
+   :to :sbom-tool.usecase/render-report}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-vulnerability-report-includes-read-sbom
+   :from :sbom-tool.usecase/generate-vulnerability-report
+   :to :sbom-tool.usecase/read-sbom}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-vulnerability-report-includes-classify-vulnerabilities
+   :from :sbom-tool.usecase/generate-vulnerability-report
+   :to :sbom-tool.usecase/classify-vulnerabilities}
+
+  {:el :include
+   :id :sbom-tool.usecase/generate-vulnerability-report-includes-render-report
+   :from :sbom-tool.usecase/generate-vulnerability-report
+   :to :sbom-tool.usecase/render-report}
+
+  {:el :extends
+   :id :sbom-tool.usecase/lookup-vulnerabilities-extends-generate-vulnerability-report
+   :from :sbom-tool.usecase/lookup-vulnerabilities
+   :to :sbom-tool.usecase/generate-vulnerability-report}
+
+  {:el :extends
+   :id :sbom-tool.usecase/apply-vex-statements-extends-generate-vulnerability-report
+   :from :sbom-tool.usecase/apply-vex-statements
+   :to :sbom-tool.usecase/generate-vulnerability-report}
+
+  {:el :include
+   :id :sbom-tool.usecase/read-sbom-includes-consolidate-components
+   :from :sbom-tool.usecase/read-sbom
+   :to :sbom-tool.usecase/consolidate-components}
+  ;
+  }
