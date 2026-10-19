@@ -82,6 +82,8 @@
  ;;;
  ;;; Markdown Architecture Documentation
  ;;;
+ 
+ ;; Single Page
  {:selection {:el :system :external? false}
   :template "docs/arc42.md.cmb"
   :per-element true
@@ -90,7 +92,7 @@
   :extension "md"
   :protected-area "PA"}
 
- ;;;
+  ;;;
  ;;; Markdown Reports
  ;;;
  #_{:selection {}
