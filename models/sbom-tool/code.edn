@@ -1,0 +1,323 @@
+;;;;
+;;;; Code Model for SBOM Tool
+;;;;
+#{;
+  ; packages and namespaces, mirroring src/sbom_tool
+
+  {:el :package
+   :id :sbom-tool.code/domain
+   :name "sbom-tool.domain"
+   :desc "Pure domain logic: the canonical SBOM model, licenses, vulnerabilities, VEX, purls and CVSS. Depends on nothing else in the project."}
+
+  {:el :package
+   :id :sbom-tool.code/application
+   :name "sbom-tool.application"
+   :desc "Orchestrates domain logic into use cases: the consolidated-component repository, report generation and template rendering."}
+
+  {:el :package
+   :id :sbom-tool.code/adapter
+   :name "sbom-tool.adapter"
+   :desc "Adapters for SBOM, license and VEX formats, vulnerability databases, policy files, report rendering and the CLI."}
+
+  {:el :package
+   :id :sbom-tool.code.adapter/sbom
+   :name "sbom-tool.adapter.sbom"
+   :desc "SBOM format adapters."}
+
+  {:el :package
+   :id :sbom-tool.code.adapter/license
+   :name "sbom-tool.adapter.license"
+   :desc "License data adapters."}
+
+  {:el :package
+   :id :sbom-tool.code.adapter/vulnerability
+   :name "sbom-tool.adapter.vulnerability"
+   :desc "Optional, opt-in live vulnerability database adapters, keyed by purl."}
+
+  {:el :package
+   :id :sbom-tool.code.adapter/vex
+   :name "sbom-tool.adapter.vex"
+   :desc "VEX format adapters."}
+
+  {:el :package
+   :id :sbom-tool.code.adapter/report
+   :name "sbom-tool.adapter.report"
+   :desc "Report rendering adapters."}
+
+  {:el :package
+   :id :sbom-tool.code.adapter/ui
+   :name "sbom-tool.adapter.ui"
+   :desc "Command-line interface."}
+
+  {:el :namespace
+   :id :sbom-tool.code.domain/sbom
+   :name "sbom-tool.domain.sbom"
+   :desc "Canonical SBOM model shared by all adapters and the application layer."}
+  {:el :namespace
+   :id :sbom-tool.code.domain/component
+   :name "sbom-tool.domain.component"
+   :desc "Recognizes and merges components describing the same real-world package across different SBOM documents."}
+  {:el :namespace
+   :id :sbom-tool.code.domain/license
+   :name "sbom-tool.domain.license"
+   :desc "Evaluates and classifies component licenses against a compliance policy."}
+  {:el :namespace
+   :id :sbom-tool.code.domain/vulnerability
+   :name "sbom-tool.domain.vulnerability"
+   :desc "Evaluates and classifies component vulnerabilities against a compliance policy."}
+  {:el :namespace
+   :id :sbom-tool.code.domain/vex
+   :name "sbom-tool.domain.vex"
+   :desc "Domain logic for VEX statements: a supplier's per-product assertion of vulnerability exploitability."}
+  {:el :namespace
+   :id :sbom-tool.code.domain/purl
+   :name "sbom-tool.domain.purl"
+   :desc "Parses and renders purls (Package URLs)."}
+  {:el :namespace
+   :id :sbom-tool.code.domain/cvss
+   :name "sbom-tool.domain.cvss"
+   :desc "Parses CVSS v2/v3 Base vector strings into severity scores and ratings."}
+
+  {:el :namespace
+   :id :sbom-tool.code.application/repository
+   :name "sbom-tool.application.repository"
+   :desc "Holds consolidated components and policy/vulnerability/VEX state read by adapters."}
+  {:el :namespace
+   :id :sbom-tool.code.application/report
+   :name "sbom-tool.application.report"
+   :desc "Builds the license, copyright and vulnerability reports from the repository."}
+  {:el :namespace
+   :id :sbom-tool.code.application/template
+   :name "sbom-tool.application.template"
+   :desc "Extension point for rendering a report's data in an output format."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter/policies
+   :name "sbom-tool.adapter.policies"
+   :desc "Reads and validates license/vulnerability policy files."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter.sbom/cdx
+   :name "sbom-tool.adapter.sbom.cdx"
+   :desc "Reads CycloneDX SBOM files into the canonical SBOM model."}
+  {:el :namespace
+   :id :sbom-tool.code.adapter.sbom/spdx
+   :name "sbom-tool.adapter.sbom.spdx"
+   :desc "Reads SPDX SBOM files into the canonical SBOM model."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter.license/spdx
+   :name "sbom-tool.adapter.license.spdx"
+   :desc "Reads the official SPDX license list to enrich license report entries with their canonical name."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter.vulnerability/osv
+   :name "sbom-tool.adapter.vulnerability.osv"
+   :desc "Looks up vulnerabilities in Google OSV."}
+  {:el :namespace
+   :id :sbom-tool.code.adapter.vulnerability/deps-dev
+   :name "sbom-tool.adapter.vulnerability.deps-dev"
+   :desc "Looks up vulnerabilities in Google deps.dev."}
+  {:el :namespace
+   :id :sbom-tool.code.adapter.vulnerability/github-advisory
+   :name "sbom-tool.adapter.vulnerability.github-advisory"
+   :desc "Looks up vulnerabilities in GitHub's Advisory Database."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter.vex/openvex
+   :name "sbom-tool.adapter.vex.openvex"
+   :desc "Reads OpenVEX documents into the canonical VEX model."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter.report/markdown
+   :name "sbom-tool.adapter.report.markdown"
+   :desc "Renders reports as markdown."}
+  {:el :namespace
+   :id :sbom-tool.code.adapter.report/json
+   :name "sbom-tool.adapter.report.json"
+   :desc "Renders reports as JSON."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter.ui/cli
+   :name "sbom-tool.adapter.ui.cli"
+   :desc "Command-line interface: wires adapters to the application layer and renders output. The composition root."}
+  {:el :namespace
+   :id :sbom-tool.code.adapter.ui/errors
+   :name "sbom-tool.adapter.ui.errors"
+   :desc "Formats exceptions into short, human-readable CLI messages."}
+
+  ; containment
+
+  {:el :contained-in :id :sbom-tool.code.adapter/sbom-contained-in-adapter
+   :from :sbom-tool.code.adapter/sbom :to :sbom-tool.code/adapter}
+  {:el :contained-in :id :sbom-tool.code.adapter/license-contained-in-adapter
+   :from :sbom-tool.code.adapter/license :to :sbom-tool.code/adapter}
+  {:el :contained-in :id :sbom-tool.code.adapter/vulnerability-contained-in-adapter
+   :from :sbom-tool.code.adapter/vulnerability :to :sbom-tool.code/adapter}
+  {:el :contained-in :id :sbom-tool.code.adapter/vex-contained-in-adapter
+   :from :sbom-tool.code.adapter/vex :to :sbom-tool.code/adapter}
+  {:el :contained-in :id :sbom-tool.code.adapter/report-contained-in-adapter
+   :from :sbom-tool.code.adapter/report :to :sbom-tool.code/adapter}
+  {:el :contained-in :id :sbom-tool.code.adapter/ui-contained-in-adapter
+   :from :sbom-tool.code.adapter/ui :to :sbom-tool.code/adapter}
+
+  {:el :contained-in :id :sbom-tool.code.domain/sbom-contained-in-domain
+   :from :sbom-tool.code.domain/sbom :to :sbom-tool.code/domain}
+  {:el :contained-in :id :sbom-tool.code.domain/component-contained-in-domain
+   :from :sbom-tool.code.domain/component :to :sbom-tool.code/domain}
+  {:el :contained-in :id :sbom-tool.code.domain/license-contained-in-domain
+   :from :sbom-tool.code.domain/license :to :sbom-tool.code/domain}
+  {:el :contained-in :id :sbom-tool.code.domain/vulnerability-contained-in-domain
+   :from :sbom-tool.code.domain/vulnerability :to :sbom-tool.code/domain}
+  {:el :contained-in :id :sbom-tool.code.domain/vex-contained-in-domain
+   :from :sbom-tool.code.domain/vex :to :sbom-tool.code/domain}
+  {:el :contained-in :id :sbom-tool.code.domain/purl-contained-in-domain
+   :from :sbom-tool.code.domain/purl :to :sbom-tool.code/domain}
+  {:el :contained-in :id :sbom-tool.code.domain/cvss-contained-in-domain
+   :from :sbom-tool.code.domain/cvss :to :sbom-tool.code/domain}
+
+  {:el :contained-in :id :sbom-tool.code.application/repository-contained-in-application
+   :from :sbom-tool.code.application/repository :to :sbom-tool.code/application}
+  {:el :contained-in :id :sbom-tool.code.application/report-contained-in-application
+   :from :sbom-tool.code.application/report :to :sbom-tool.code/application}
+  {:el :contained-in :id :sbom-tool.code.application/template-contained-in-application
+   :from :sbom-tool.code.application/template :to :sbom-tool.code/application}
+
+  {:el :contained-in :id :sbom-tool.code.adapter/policies-contained-in-adapter
+   :from :sbom-tool.code.adapter/policies :to :sbom-tool.code/adapter}
+
+  {:el :contained-in :id :sbom-tool.code.adapter.sbom/cdx-contained-in-sbom
+   :from :sbom-tool.code.adapter.sbom/cdx :to :sbom-tool.code.adapter/sbom}
+  {:el :contained-in :id :sbom-tool.code.adapter.sbom/spdx-contained-in-sbom
+   :from :sbom-tool.code.adapter.sbom/spdx :to :sbom-tool.code.adapter/sbom}
+
+  {:el :contained-in :id :sbom-tool.code.adapter.license/spdx-contained-in-license
+   :from :sbom-tool.code.adapter.license/spdx :to :sbom-tool.code.adapter/license}
+
+  {:el :contained-in :id :sbom-tool.code.adapter.vulnerability/osv-contained-in-vulnerability
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.adapter/vulnerability}
+  {:el :contained-in :id :sbom-tool.code.adapter.vulnerability/deps-dev-contained-in-vulnerability
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.adapter/vulnerability}
+  {:el :contained-in :id :sbom-tool.code.adapter.vulnerability/github-advisory-contained-in-vulnerability
+   :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.adapter/vulnerability}
+
+  {:el :contained-in :id :sbom-tool.code.adapter.vex/openvex-contained-in-vex
+   :from :sbom-tool.code.adapter.vex/openvex :to :sbom-tool.code.adapter/vex}
+
+  {:el :contained-in :id :sbom-tool.code.adapter.report/markdown-contained-in-report
+   :from :sbom-tool.code.adapter.report/markdown :to :sbom-tool.code.adapter/report}
+  {:el :contained-in :id :sbom-tool.code.adapter.report/json-contained-in-report
+   :from :sbom-tool.code.adapter.report/json :to :sbom-tool.code.adapter/report}
+
+  {:el :contained-in :id :sbom-tool.code.adapter.ui/cli-contained-in-ui
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter/ui}
+  {:el :contained-in :id :sbom-tool.code.adapter.ui/errors-contained-in-ui
+   :from :sbom-tool.code.adapter.ui/errors :to :sbom-tool.code.adapter/ui}
+
+  ; dependencies between namespaces, derived from their :require forms
+
+  {:el :dependency :id :sbom-tool.code.domain/component-depends-on-sbom
+   :from :sbom-tool.code.domain/component :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.domain/license-depends-on-sbom
+   :from :sbom-tool.code.domain/license :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.domain/vex-depends-on-sbom
+   :from :sbom-tool.code.domain/vex :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.domain/vulnerability-depends-on-sbom
+   :from :sbom-tool.code.domain/vulnerability :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.domain/vulnerability-depends-on-vex
+   :from :sbom-tool.code.domain/vulnerability :to :sbom-tool.code.domain/vex}
+
+  {:el :dependency :id :sbom-tool.code.application/repository-depends-on-domain-component
+   :from :sbom-tool.code.application/repository :to :sbom-tool.code.domain/component}
+  {:el :dependency :id :sbom-tool.code.application/repository-depends-on-domain-sbom
+   :from :sbom-tool.code.application/repository :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.application/report-depends-on-repository
+   :from :sbom-tool.code.application/report :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.application/report-depends-on-domain-component
+   :from :sbom-tool.code.application/report :to :sbom-tool.code.domain/component}
+  {:el :dependency :id :sbom-tool.code.application/report-depends-on-domain-license
+   :from :sbom-tool.code.application/report :to :sbom-tool.code.domain/license}
+  {:el :dependency :id :sbom-tool.code.application/report-depends-on-domain-sbom
+   :from :sbom-tool.code.application/report :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.application/report-depends-on-domain-vex
+   :from :sbom-tool.code.application/report :to :sbom-tool.code.domain/vex}
+  {:el :dependency :id :sbom-tool.code.application/report-depends-on-domain-vulnerability
+   :from :sbom-tool.code.application/report :to :sbom-tool.code.domain/vulnerability}
+
+  {:el :dependency :id :sbom-tool.code.adapter/policies-depends-on-application-repository
+   :from :sbom-tool.code.adapter/policies :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter/policies-depends-on-domain-license
+   :from :sbom-tool.code.adapter/policies :to :sbom-tool.code.domain/license}
+  {:el :dependency :id :sbom-tool.code.adapter/policies-depends-on-domain-vulnerability
+   :from :sbom-tool.code.adapter/policies :to :sbom-tool.code.domain/vulnerability}
+
+  {:el :dependency :id :sbom-tool.code.adapter.sbom/cdx-depends-on-application-repository
+   :from :sbom-tool.code.adapter.sbom/cdx :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter.sbom/cdx-depends-on-domain-sbom
+   :from :sbom-tool.code.adapter.sbom/cdx :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.adapter.sbom/spdx-depends-on-application-repository
+   :from :sbom-tool.code.adapter.sbom/spdx :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter.sbom/spdx-depends-on-domain-sbom
+   :from :sbom-tool.code.adapter.sbom/spdx :to :sbom-tool.code.domain/sbom}
+
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/osv-depends-on-application-repository
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/osv-depends-on-domain-cvss
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.domain/cvss}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/osv-depends-on-domain-purl
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.domain/purl}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/osv-depends-on-domain-sbom
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/deps-dev-depends-on-application-repository
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/deps-dev-depends-on-domain-cvss
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.domain/cvss}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/deps-dev-depends-on-domain-purl
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.domain/purl}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/deps-dev-depends-on-domain-sbom
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/github-advisory-depends-on-application-repository
+   :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/github-advisory-depends-on-domain-purl
+   :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.domain/purl}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/github-advisory-depends-on-domain-sbom
+   :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.domain/sbom}
+
+  {:el :dependency :id :sbom-tool.code.adapter.vex/openvex-depends-on-domain-vex
+   :from :sbom-tool.code.adapter.vex/openvex :to :sbom-tool.code.domain/vex}
+
+  {:el :dependency :id :sbom-tool.code.adapter.report/markdown-depends-on-application-template
+   :from :sbom-tool.code.adapter.report/markdown :to :sbom-tool.code.application/template}
+  {:el :dependency :id :sbom-tool.code.adapter.report/json-depends-on-application-template
+   :from :sbom-tool.code.adapter.report/json :to :sbom-tool.code.application/template}
+
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-application-report
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.application/report}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-application-template
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.application/template}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-application-repository
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.application/repository}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-errors
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.ui/errors}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-policies
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter/policies}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-sbom-cdx
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.sbom/cdx}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-sbom-spdx
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.sbom/spdx}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-license-spdx
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.license/spdx}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-vulnerability-osv
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.vulnerability/osv}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-vulnerability-deps-dev
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.vulnerability/deps-dev}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-vulnerability-github-advisory
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.vulnerability/github-advisory}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-vex-openvex
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.vex/openvex}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-report-markdown
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.report/markdown}
+  {:el :dependency :id :sbom-tool.code.adapter.ui/cli-depends-on-adapter-report-json
+   :from :sbom-tool.code.adapter.ui/cli :to :sbom-tool.code.adapter.report/json}
+  ;
+  }

@@ -4,8 +4,17 @@
 #{{:el :use-case-view
    :id :sbom-tool/use-case-view
    :title "Use Cases of the SBOM Tool"
+   :desc "Shows the use cases and actors of the SBOM Tool"
    :layout :left-right
    :selection {:namespace-prefix "sbom-tool"}
+   :include :relations}
+
+  {:el :code-view
+   :id :sbom-tool/code-view
+   :title "Code View of the SBOM Tool"
+   :desc "Shows the code structure of the SBOM Tool"
+   :layout :top-down
+   :selection {:namespace-prefix "sbom-tool.code"}
    :include :relations}
   ;
   }

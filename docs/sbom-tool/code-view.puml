@@ -1,0 +1,142 @@
+@startuml code-view
+
+
+top to bottom direction
+
+
+
+title Namespaces of the SBOM Tool
+
+package "sbom-tool.adapter" as sbomTool_code_adapter {
+  package "sbom-tool.adapter.sbom" as sbomTool_code_adapter_sbom {
+    namespace "sbom-tool.adapter.sbom.cdx" as sbomTool_code_adapter_sbom_cdx {
+
+    }
+    namespace "sbom-tool.adapter.sbom.spdx" as sbomTool_code_adapter_sbom_spdx {
+
+    }
+  }
+  package "sbom-tool.adapter.report" as sbomTool_code_adapter_report {
+    namespace "sbom-tool.adapter.report.json" as sbomTool_code_adapter_report_json {
+
+    }
+    namespace "sbom-tool.adapter.report.markdown" as sbomTool_code_adapter_report_markdown {
+      
+    }
+  }
+  package "sbom-tool.adapter.ui" as sbomTool_code_adapter_ui {
+    namespace "sbom-tool.adapter.ui.cli" as sbomTool_code_adapter_ui_cli {
+      
+    }
+    namespace "sbom-tool.adapter.ui.errors" as sbomTool_code_adapter_ui_errors {
+      
+    }
+  }
+  namespace "sbom-tool.adapter.policies" as sbomTool_code_adapter_policies {
+    
+  }
+  package "sbom-tool.adapter.license" as sbomTool_code_adapter_license {
+    namespace "sbom-tool.adapter.license.spdx" as sbomTool_code_adapter_license_spdx {
+      
+    }
+  }
+  package "sbom-tool.adapter.vex" as sbomTool_code_adapter_vex {
+    namespace "sbom-tool.adapter.vex.openvex" as sbomTool_code_adapter_vex_openvex {
+      
+    }
+  }
+  package "sbom-tool.adapter.vulnerability" as sbomTool_code_adapter_vulnerability {
+    namespace "sbom-tool.adapter.vulnerability.deps-dev" as sbomTool_code_adapter_vulnerability_depsDev {
+      
+    }
+    namespace "sbom-tool.adapter.vulnerability.osv" as sbomTool_code_adapter_vulnerability_osv {
+      
+    }
+    namespace "sbom-tool.adapter.vulnerability.github-advisory" as sbomTool_code_adapter_vulnerability_githubAdvisory {
+      
+    }
+  }
+}
+package "sbom-tool.application" as sbomTool_code_application {
+  namespace "sbom-tool.application.report" as sbomTool_code_application_report {
+
+  }
+  namespace "sbom-tool.application.template" as sbomTool_code_application_template {
+
+  }
+  namespace "sbom-tool.application.repository" as sbomTool_code_application_repository {
+
+  }
+}
+package "sbom-tool.domain" as sbomTool_code_domain {
+  namespace "sbom-tool.domain.component" as sbomTool_code_domain_component {
+
+  }
+  namespace "sbom-tool.domain.vulnerability" as sbomTool_code_domain_vulnerability {
+    
+  }
+  namespace "sbom-tool.domain.cvss" as sbomTool_code_domain_cvss {
+    
+  }
+  namespace "sbom-tool.domain.purl" as sbomTool_code_domain_purl {
+    
+  }
+  namespace "sbom-tool.domain.sbom" as sbomTool_code_domain_sbom {
+    
+  }
+  namespace "sbom-tool.domain.vex" as sbomTool_code_domain_vex {
+    
+  }
+  namespace "sbom-tool.domain.license" as sbomTool_code_domain_license {
+    
+  }
+}
+sbomTool_code_adapter_report_json ..> sbomTool_code_application_template
+sbomTool_code_adapter_sbom_spdx ..> sbomTool_code_domain_sbom
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_application_report
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_vulnerability_osv
+sbomTool_code_domain_vex ..> sbomTool_code_domain_sbom
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_license_spdx
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_vex_openvex
+sbomTool_code_adapter_vulnerability_githubAdvisory ..> sbomTool_code_application_repository
+sbomTool_code_adapter_vulnerability_githubAdvisory ..> sbomTool_code_domain_purl
+sbomTool_code_adapter_vex_openvex ..> sbomTool_code_domain_vex
+sbomTool_code_adapter_sbom_cdx ..> sbomTool_code_application_repository
+sbomTool_code_adapter_vulnerability_depsDev ..> sbomTool_code_domain_sbom
+sbomTool_code_domain_vulnerability ..> sbomTool_code_domain_sbom
+sbomTool_code_domain_vulnerability ..> sbomTool_code_domain_vex
+sbomTool_code_application_report ..> sbomTool_code_domain_component
+sbomTool_code_application_repository ..> sbomTool_code_domain_component
+sbomTool_code_application_report ..> sbomTool_code_application_repository
+sbomTool_code_adapter_vulnerability_githubAdvisory ..> sbomTool_code_domain_sbom
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_sbom_spdx
+sbomTool_code_adapter_policies ..> sbomTool_code_domain_vulnerability
+sbomTool_code_adapter_sbom_cdx ..> sbomTool_code_domain_sbom
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_application_repository
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_application_template
+sbomTool_code_adapter_policies ..> sbomTool_code_domain_license
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_report_json
+sbomTool_code_domain_component ..> sbomTool_code_domain_sbom
+sbomTool_code_domain_license ..> sbomTool_code_domain_sbom
+sbomTool_code_adapter_vulnerability_depsDev ..> sbomTool_code_application_repository
+sbomTool_code_application_report ..> sbomTool_code_domain_vulnerability
+sbomTool_code_application_report ..> sbomTool_code_domain_license
+sbomTool_code_adapter_vulnerability_osv ..> sbomTool_code_application_repository
+sbomTool_code_adapter_sbom_spdx ..> sbomTool_code_application_repository
+sbomTool_code_application_report ..> sbomTool_code_domain_vex
+sbomTool_code_adapter_vulnerability_osv ..> sbomTool_code_domain_purl
+sbomTool_code_adapter_vulnerability_osv ..> sbomTool_code_domain_cvss
+sbomTool_code_adapter_vulnerability_depsDev ..> sbomTool_code_domain_cvss
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_vulnerability_githubAdvisory
+sbomTool_code_adapter_report_markdown ..> sbomTool_code_application_template
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_policies
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_report_markdown
+sbomTool_code_adapter_vulnerability_osv ..> sbomTool_code_domain_sbom
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_ui_errors
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_vulnerability_depsDev
+sbomTool_code_adapter_ui_cli ..> sbomTool_code_adapter_sbom_cdx
+sbomTool_code_adapter_vulnerability_depsDev ..> sbomTool_code_domain_purl
+sbomTool_code_adapter_policies ..> sbomTool_code_application_repository
+sbomTool_code_application_repository ..> sbomTool_code_domain_sbom
+sbomTool_code_application_report ..> sbomTool_code_domain_sbom
+@enduml
