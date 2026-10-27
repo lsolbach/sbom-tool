@@ -4,7 +4,12 @@
 #{{:el :system
    :id :sbom-tool/sbom-tool
    :name "SBOM Tool"
-   :desc "Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance."}
+   :desc "Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance."
+   :ct #{{:el :container
+          :id :sbom-tool/cli
+          :name "SBOM Tool CLI"
+          :desc "Command-line application that reads SBOM files and reports license and vulnerability compliance."
+          :tech "Clojure"}}}
 
   {:el :person
    :id :sbom-tool/user
@@ -46,5 +51,33 @@
    :id :sbom-tool/ci-pipeline-uses-enforce-policy-gate
    :from :sbom-tool/ci-pipeline
    :to :sbom-tool.usecase/enforce-policy-gate}
+
+  {:el :request
+   :id :sbom-tool/user-runs-sbom-tool
+   :from :sbom-tool/user
+   :to :sbom-tool/sbom-tool
+   :name "Runs"
+   :tech "CLI"}
+
+  {:el :request
+   :id :sbom-tool/ci-pipeline-invokes-sbom-tool
+   :from :sbom-tool/ci-pipeline
+   :to :sbom-tool/sbom-tool
+   :name "Invokes"
+   :tech "CLI"}
+
+  {:el :request
+   :id :sbom-tool/user-runs-cli
+   :from :sbom-tool/user
+   :to :sbom-tool/cli
+   :name "Runs"
+   :tech "CLI"}
+
+  {:el :request
+   :id :sbom-tool/ci-pipeline-invokes-cli
+   :from :sbom-tool/ci-pipeline
+   :to :sbom-tool/cli
+   :name "Invokes"
+   :tech "CLI"}
   ;
   }

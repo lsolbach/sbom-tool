@@ -4,7 +4,7 @@
 ![Use Cases of the SBOM Tool](../sbom-tool/use-case-view.png)
 
 ## Description
-
+Shows the use cases and actors of the SBOM Tool
 
 ## Roles
 | Person/Role | Description |
@@ -50,6 +50,11 @@
 |---|---|
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md)| Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations. |
 | [SBOM Tool](../sbom-tool/sbom-tool.md)| Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance. |
+
+## Containers
+| Container | Description |
+|---|---|
+| [SBOM Tool CLI](../sbom-tool/cli.md)| Command-line application that reads SBOM files and reports license and vulnerability compliance. |
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

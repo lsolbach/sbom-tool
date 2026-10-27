@@ -3,18 +3,28 @@
 ;;;;
 #{{:el :use-case-view
    :id :sbom-tool/use-case-view
+   :name "SBOM Tool Use Case View"
    :title "Use Cases of the SBOM Tool"
    :desc "Shows the use cases and actors of the SBOM Tool"
    :layout :left-right
    :selection {:namespace-prefix "sbom-tool"}
    :include :relations}
 
-  {:el :code-view
-   :id :sbom-tool/code-view
-   :title "Code View of the SBOM Tool"
-   :desc "Shows the code structure of the SBOM Tool"
-   :layout :top-down
-   :selection {:namespace-prefix "sbom-tool.code"}
-   :include :relations}
+  {:el :context-view
+   :id :sbom-tool/context-view
+   :name "SBOM Tool System Context View"
+   :title "System Context View for the SBOM Tool"
+   :desc "Shows the system context and external interactions of the SBOM Tool"
+   :selection {:namespace-prefix "sbom-tool"}
+   :include :related}
+
+  {:el :container-view
+   :id :sbom-tool/container-view
+   :name "SBOM Tool Container View"
+   :title "Container View for the SBOM Tool"
+   :desc "Shows the containers of the SBOM Tool and their interactions"
+   :selection {:namespace-prefix "sbom-tool"}
+   :include :related}
+
   ;
   }

@@ -70,6 +70,11 @@ Reads CycloneDX and SPDX software bill of materials files and reports on license
 <!-- PA-END(SystemContext1) -->
 
 
+### System Context View
+![System Context View for the SBOM Tool](../sbom-tool/context-view.png)
+
+[System Context View for the SBOM Tool](../sbom-tool/context-view.md)
+
 <!-- PA-BEGIN(SystemContext2) -->
 <!-- PA-END(SystemContext2) -->
 
@@ -101,6 +106,11 @@ Reads CycloneDX and SPDX software bill of materials files and reports on license
 <!-- PA-BEGIN(BuildingBlocks1) -->
 <!-- PA-END(BuildingBlocks1) -->
 
+
+### Container View
+![Container View for the SBOM Tool](../sbom-tool/container-view.png)
+
+[Container View for the SBOM Tool](../sbom-tool/container-view.md)
 
 
 <!-- PA-BEGIN(BuildingBlocks2) -->

@@ -11,6 +11,11 @@ Runs the SBOM Tool CLI to check license and vulnerability compliance of software
 | [generate copyright report](../sbom-tool/usecase/generate-copyright-report.md) | Report on resolved copyright notices per component and components with missing copyright. |
 | [generate license report](../sbom-tool/usecase/generate-license-report.md) | Report on component licenses: per-component status, summaries, multi-licensed, unidentified and blacklisted licenses. |
 | [generate vulnerability report](../sbom-tool/usecase/generate-vulnerability-report.md) | Report on known vulnerabilities per component, including summaries and policy-blocked vulnerabilities. |
+## Outgoing Synchronous Requests 
+| From | Name | To | Technology | Description |
+|---|---|---|---|---|
+| [User](../sbom-tool/user.md) | Runs | [SBOM Tool CLI](../sbom-tool/cli.md) | CLI |  |
+| [User](../sbom-tool/user.md) | Runs | [SBOM Tool](../sbom-tool/sbom-tool.md) | CLI |  |
 
 
 ## Navigation

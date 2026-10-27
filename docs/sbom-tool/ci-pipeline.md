@@ -7,6 +7,16 @@ Automated pipeline that invokes the SBOM Tool to gate builds on compliance polic
 | Use Case | Description |
 |---|---|
 | [enforce policy gate](../sbom-tool/usecase/enforce-policy-gate.md) | Fail the process when a policy violation is found, so a build pipeline can block on non-compliant components. |
+## Outgoing Synchronous Requests 
+| From | Name | To | Technology | Description |
+|---|---|---|---|---|
+| [CI/CD Pipeline](../sbom-tool/ci-pipeline.md) | Invokes | [SBOM Tool](../sbom-tool/sbom-tool.md) | CLI |  |
+| [CI/CD Pipeline](../sbom-tool/ci-pipeline.md) | Invokes | [SBOM Tool CLI](../sbom-tool/cli.md) | CLI |  |
+
+## System Context View
+![System Context View for the SBOM Tool](../sbom-tool/context-view.png)
+
+[System Context View for the SBOM Tool](../sbom-tool/context-view.md)
 
 
 ## Navigation
