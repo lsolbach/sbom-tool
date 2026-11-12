@@ -4,6 +4,11 @@
 Apply suppliers' OpenVEX statements to downgrade or annotate vulnerabilities assessed as not affected or fixed, without changing any other component's report.
 
 
+## Implementing Decisions
+| Decision | Description |
+|---|---|
+| [resolve conflicting VEX statements to the most conservative status](../../sbom-tool/decision/vex-most-conservative-status-wins.md) | VEX statements are applied only via an explicit --vex-path; when several match, affected beats under-investigation beats fixed beats not-affected, so a stale not-affected claim cannot hide an affected one. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

@@ -4,12 +4,25 @@
 Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance.
 
 
+## Implementing Requirements
+| Requirement | Description |
+|---|---|
+| [actionable error messages and diagnostics](../sbom-tool/requirement/actionable-diagnostics.md) | Errors name the failing input and the cause; --debug gives details for diagnosis, and stdout stays clean for reports. |
+| [credentials are sent only to their own service](../sbom-tool/requirement/credentials-only-to-own-service.md) | An API key is sent only to the host of the service it belongs to, over HTTPS, and is never printed or logged. |
+| [network calls are bounded in time and size](../sbom-tool/requirement/bounded-network-calls.md) | Every live lookup request has a connect and request timeout and a response size cap, and a timeout counts as a failed lookup. |
+| [offline, fast and deterministic test suite](../sbom-tool/requirement/offline-deterministic-tests.md) | bb test needs no network access and gives the same result on every run. |
+| [pure, I/O-free domain core](../sbom-tool/requirement/pure-domain-core.md) | Domain and application code know neither SBOM formats nor I/O, and dependencies point inward. |
+| [report output is safe to render](../sbom-tool/requirement/safe-report-output.md) | Untrusted text in reports is escaped for the output format, and only http(s) URLs become links. |
+| [runs on the JVM and under babashka](../sbom-tool/requirement/jvm-and-babashka-portability.md) | Source namespaces load and run identically as an uberjar on the JVM and under babashka. |
+| [untrusted input is handled as data](../sbom-tool/requirement/untrusted-input-as-data.md) | SBOM, VEX and policy files are parsed as data and never evaluated. |
+
 ## Implementing Decisions
 | Decision | Description |
 |---|---|
 | [implement in Clojure](../sbom-tool/decision/implement-in-clojure.md) | The tool is implemented in Clojure (currently 1.12.5, see project.clj). |
 | [support uberjar and Babashka execution](../sbom-tool/decision/multi-runtime-support.md) | Beyond `lein run`, the tool also runs as a prebuilt uberjar and as a Babashka script (bb.edn), so it can be used without a Leiningen installation (see README.md). |
 | [use Leiningen as the build tool](../sbom-tool/decision/leiningen-build.md) | Leiningen (project.clj) manages dependencies, runs tests and produces the uberjar. |
+| [write reports to stdout and all diagnostics to stderr, without a logging library](../sbom-tool/decision/diagnostics-on-stderr.md) | Warnings and error messages go to *err* as plain 'Warning: ...' lines from small per-adapter helpers; stdout carries only the report. |
 ## Containers
 | Container | Description |
 |---|---|
@@ -19,6 +32,12 @@ Reads CycloneDX and SPDX software bill of materials files and reports on license
 |---|---|---|---|---|
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md) | Invokes | [SBOM Tool](../sbom-tool/sbom-tool.md) | CLI |  |
 | [User](../sbom-tool/user.md) | Runs | [SBOM Tool](../sbom-tool/sbom-tool.md) | CLI |  |
+## Outgoing Synchronous Requests 
+| From | Name | To | Technology | Description |
+|---|---|---|---|---|
+| [SBOM Tool](../sbom-tool/sbom-tool.md) | Looks up vulnerabilities (opt-in) | [OSV](../sbom-tool/osv.md) | HTTPS/JSON |  |
+| [SBOM Tool](../sbom-tool/sbom-tool.md) | Looks up vulnerabilities (opt-in) | [GitHub Advisory Database](../sbom-tool/github-advisory.md) | HTTPS/JSON |  |
+| [SBOM Tool](../sbom-tool/sbom-tool.md) | Looks up vulnerabilities (opt-in) | [deps.dev](../sbom-tool/deps-dev.md) | HTTPS/JSON |  |
 
 ## System Context View
 ![System Context View for the SBOM Tool](../sbom-tool/context-view.png)

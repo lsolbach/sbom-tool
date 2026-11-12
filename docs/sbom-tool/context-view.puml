@@ -6,10 +6,16 @@
 !include <azure/AzureC4Integration>
 !include <tupadr3/common>
 title System Context View for the SBOM Tool
+System_Ext(sbomTool_githubAdvisory, "GitHub Advisory Database", $descr="GitHub's advisory database, queried through the GitHub REST API.")
+System_Ext(sbomTool_depsDev, "deps.dev", $descr="Google's open source insights service (deps.dev), queried by purl for vulnerability data.")
 System_Ext(sbomTool_ciPipeline, "CI/CD Pipeline", $descr="Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations.")
+System_Ext(sbomTool_osv, "OSV", $descr="Google's open source vulnerability database (osv.dev), queried by purl.")
 Person(sbomTool_user, "User", $descr="Runs the SBOM Tool CLI to check license and vulnerability compliance of software components.")
 System(sbomTool_sbomTool, "SBOM Tool", $descr="Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance.")
+Rel(sbomTool_sbomTool, sbomTool_osv, "Looks up vulnerabilities (opt-in)", $techn="HTTPS/JSON")
 Rel(sbomTool_ciPipeline, sbomTool_sbomTool, "Invokes", $techn="CLI")
+Rel(sbomTool_sbomTool, sbomTool_githubAdvisory, "Looks up vulnerabilities (opt-in)", $techn="HTTPS/JSON")
+Rel(sbomTool_sbomTool, sbomTool_depsDev, "Looks up vulnerabilities (opt-in)", $techn="HTTPS/JSON")
 Rel(sbomTool_user, sbomTool_sbomTool, "Runs", $techn="CLI")
 SHOW_LEGEND()
 @enduml

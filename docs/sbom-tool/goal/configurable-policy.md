@@ -4,6 +4,17 @@
 Make license and vulnerability policies (whitelist/blacklist, severity gates, exemptions) configurable via policy files instead of hardcoded.
 
 
+## Implementing Requirements
+| Requirement | Description |
+|---|---|
+| [configurable policies](../../sbom-tool/requirement/configurable-policies.md) | License and vulnerability policies are set in a policy file, not in code. |
+
+## Implementing Decisions
+| Decision | Description |
+|---|---|
+| [configure through CLI options and EDN files, and keep API keys out of the command line](../../sbom-tool/decision/configuration-and-secrets-handling.md) | Behavior is set by CLI options and EDN policy files validated with clojure.spec, with bundled defaults; API keys come from an EDN file or an environment variable, never from an option value. |
+| [let a license review resolve open cases but never override the blacklist](../../sbom-tool/decision/reviewed-never-overrides-blacklist.md) | A reviewed component overrides grey, unidentified and no-license statuses only; blacklisted and whitelisted results stay as computed, and proprietary, reviewed or no-license components never affect the exit status. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

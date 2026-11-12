@@ -15,12 +15,18 @@ Shows the system context and external interactions of the SBOM Tool
 | System | Description |
 |---|---|
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md)| Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations. |
+| [GitHub Advisory Database](../sbom-tool/github-advisory.md)| GitHub's advisory database, queried through the GitHub REST API. |
+| [OSV](../sbom-tool/osv.md)| Google's open source vulnerability database (osv.dev), queried by purl. |
 | [SBOM Tool](../sbom-tool/sbom-tool.md)| Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance. |
+| [deps.dev](../sbom-tool/deps-dev.md)| Google's open source insights service (deps.dev), queried by purl for vulnerability data. |
 
 ## Synchronous Requests
 | From | Name | To | Technology | Description |
 |---|---|---|---|---|
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md) | Invokes | [SBOM Tool](../sbom-tool/sbom-tool.md) | CLI |  |
+| [SBOM Tool](../sbom-tool/sbom-tool.md) | Looks up vulnerabilities (opt-in) | [OSV](../sbom-tool/osv.md) | HTTPS/JSON |  |
+| [SBOM Tool](../sbom-tool/sbom-tool.md) | Looks up vulnerabilities (opt-in) | [GitHub Advisory Database](../sbom-tool/github-advisory.md) | HTTPS/JSON |  |
+| [SBOM Tool](../sbom-tool/sbom-tool.md) | Looks up vulnerabilities (opt-in) | [deps.dev](../sbom-tool/deps-dev.md) | HTTPS/JSON |  |
 | [User](../sbom-tool/user.md) | Runs | [SBOM Tool](../sbom-tool/sbom-tool.md) | CLI |  |
 
 ## Navigation

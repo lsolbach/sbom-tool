@@ -1,0 +1,442 @@
+;;;;
+;;;; Quality Requirements for the SBOM Tool (arc42 section 10)
+;;;;
+;;;; Derived from README, AGENTS.md and dev/plans. Measures are only given where the
+;;;; sources state a verifiable criterion; no numeric targets are defined.
+#{{:el :requirement
+   :id :sbom-tool.requirement/offline-by-default
+   :name "offline by default"
+   :desc "The tool makes no network calls unless a live vulnerability source is explicitly selected."
+   :doc "### Scenario
+
+A user or CI job runs the tool on SBOM files without -D/--vulnerability-source. Reports contain only what the SBOM and VEX files provide.
+
+### Measure
+
+No network access happens with the default option :none (verifiable by running without network access). Source: README (\"fully offline\"), dev/plans/deps-dev-vulnerability-adapter.md.
+
+### Quality attribute
+
+Security and privacy (no component data leaves the machine unasked), reliability in restricted CI networks."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/offline-deterministic-tests
+   :name "offline, fast and deterministic test suite"
+   :desc "bb test needs no network access and gives the same result on every run."
+   :doc "### Scenario
+
+A developer or CI job runs bb test.
+
+### Measure
+
+All tests pass without network access. The vulnerability adapters' real HTTP calls are deliberately not tested; only their pure mapping and chunking logic is (see risk network-paths-untested). Source: the Verification sections of dev/plans/*.md. No duration target is defined.
+
+### Quality attribute
+
+Testability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/jvm-and-babashka-portability
+   :name "runs on the JVM and under babashka"
+   :desc "Source namespaces load and run identically as an uberjar on the JVM and under babashka."
+   :doc "### Scenario
+
+The tool is started as a Leiningen uberjar or with the babashka launcher (bb.edn), and the tests run with bb test.
+
+### Measure
+
+The same sources work under both runtimes, so no dependency may be unavailable in babashka (e.g. no clj-http) and JVM-only classes need a workaround (the JsonProcessingException Class/forName fix). Source: dev/plans/deps-dev-vulnerability-adapter.md.
+
+### Quality attribute
+
+Portability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/configurable-policies
+   :name "configurable policies"
+   :desc "License and vulnerability policies are set in a policy file, not in code."
+   :doc "### Scenario
+
+A team changes which licenses are whitelisted, greylisted or blacklisted, or which vulnerability severities block a build, by editing a policy file.
+
+### Measure
+
+No code change or rebuild is needed to change a policy. Source: AGENTS.md (\"Policies must be configurable\").
+
+### Quality attribute
+
+Flexibility."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/extensible-formats-and-sources
+   :name "extensible formats and sources"
+   :desc "SBOM formats, policy formats, report formats and vulnerability sources can be added without changing the core."
+   :doc "### Scenario
+
+A developer adds an SBOM format or version, a report format or a vulnerability source (e.g. NVD).
+
+### Measure
+
+The change consists of a new adapter namespace that registers with an existing multimethod; domain and application code stay unchanged. Source: AGENTS.md (\"Other formats/versions could be added\"), dev/plans/nvd-vulnerability-adapter.md.
+
+### Quality attribute
+
+Extensibility and modifiability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/untrusted-input-as-data
+   :name "untrusted input is handled as data"
+   :desc "SBOM, VEX and policy files are parsed as data and never evaluated."
+   :doc "### Scenario
+
+The tool reads an SBOM, VEX or policy file from an untrusted source.
+
+### Measure
+
+Input is parsed with data readers only. Malformed input produces a typed error, not a crash or code execution. Source: dev/plans/vex-openvex-adapter.md (VEX files are as user-controlled as SBOM files), AGENTS.md (security starting points). This has not been reviewed in the code yet.
+
+### Quality attribute
+
+Security."
+   :tags #{"quality"}}
+
+  {:el :implements
+   :id :sbom-tool.decision/opt-in-fail-soft-live-lookup-implements-offline-by-default
+   :from :sbom-tool.decision/opt-in-fail-soft-live-lookup
+   :to :sbom-tool.requirement/offline-by-default}
+
+  {:el :implements
+   :id :sbom-tool.decision/multi-runtime-support-implements-jvm-and-babashka-portability
+   :from :sbom-tool.decision/multi-runtime-support
+   :to :sbom-tool.requirement/jvm-and-babashka-portability}
+
+  {:el :implements
+   :id :sbom-tool.decision/configuration-and-secrets-implements-configurable-policies
+   :from :sbom-tool.decision/configuration-and-secrets-handling
+   :to :sbom-tool.requirement/configurable-policies}
+
+  {:el :implements
+   :id :sbom-tool.decision/multimethod-extension-points-implements-extensible-formats-and-sources
+   :from :sbom-tool.decision/multimethod-extension-points
+   :to :sbom-tool.requirement/extensible-formats-and-sources}
+
+
+  {:el :implements
+   :id :sbom-tool.requirement/offline-by-default-implements-live-vulnerability-lookup-goal
+   :from :sbom-tool.requirement/offline-by-default
+   :to :sbom-tool.goal/live-vulnerability-lookup}
+
+  {:el :implements
+   :id :sbom-tool.requirement/configurable-policies-implements-configurable-policy-goal
+   :from :sbom-tool.requirement/configurable-policies
+   :to :sbom-tool.goal/configurable-policy}
+
+  {:el :implements
+   :id :sbom-tool.requirement/extensible-formats-and-sources-implements-multi-format-input-goal
+   :from :sbom-tool.requirement/extensible-formats-and-sources
+   :to :sbom-tool.goal/multi-format-input}
+
+  {:el :implements
+   :id :sbom-tool.requirement/extensible-formats-and-sources-implements-multi-format-output-goal
+   :from :sbom-tool.requirement/extensible-formats-and-sources
+   :to :sbom-tool.goal/multi-format-output}
+
+  {:el :implements
+   :id :sbom-tool.requirement/extensible-formats-and-sources-implements-live-vulnerability-lookup-goal
+   :from :sbom-tool.requirement/extensible-formats-and-sources
+   :to :sbom-tool.goal/live-vulnerability-lookup}
+
+  {:el :implements
+   :id :sbom-tool.requirement/offline-deterministic-tests-implements-sbom-tool
+   :from :sbom-tool.requirement/offline-deterministic-tests
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.requirement/jvm-and-babashka-portability-implements-sbom-tool
+   :from :sbom-tool.requirement/jvm-and-babashka-portability
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.requirement/untrusted-input-as-data-implements-sbom-tool
+   :from :sbom-tool.requirement/untrusted-input-as-data
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.decision/failure-policy-implements-untrusted-input-as-data
+   :from :sbom-tool.decision/failure-policy-by-input-kind
+   :to :sbom-tool.requirement/untrusted-input-as-data}
+
+  {:el :implements
+   :id :sbom-tool.decision/typed-exceptions-implements-untrusted-input-as-data
+   :from :sbom-tool.decision/typed-exceptions-with-friendly-messages
+   :to :sbom-tool.requirement/untrusted-input-as-data}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/stable-exit-codes
+   :name "stable, distinct exit codes"
+   :desc "The process exit code tells success, policy violation, runtime error and usage error apart."
+   :doc "### Scenario
+
+A CI job decides from the exit code whether to fail the build, and whether the failure is a policy violation or a broken run.
+
+### Measure
+
+Exit code 0 is success, 1 a policy violation, 2 a runtime or data error and 3 a CLI usage error or failed --validate (adapter.ui.cli). These codes are a public contract. Inferred from the code, not stated as a requirement.
+
+### Quality attribute
+
+Reliability and operability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/actionable-diagnostics
+   :name "actionable error messages and diagnostics"
+   :desc "Errors name the failing input and the cause; --debug gives details for diagnosis, and stdout stays clean for reports."
+   :doc "### Scenario
+
+A user passes a malformed SBOM or policy file, or a lookup fails.
+
+### Measure
+
+Errors are typed and carry a friendly message instead of a stack trace. Diagnostics go to stderr, so report output on stdout can be piped. Inferred from the code, not stated as a requirement.
+
+### Quality attribute
+
+Usability and analysability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/predictable-report-order
+   :name "predictable report ordering"
+   :desc "Reports list vulnerabilities by severity and license counts in a defined order."
+   :doc "### Scenario
+
+A user compares reports or reads the most important findings first.
+
+### Measure
+
+Vulnerabilities per component are sorted by severity, most severe first (application.report). The license summary is sorted by count, then name (adapter.report.markdown). Other lists are not known to be sorted, so full determinism of all output is not claimed. Inferred from the code.
+
+### Quality attribute
+
+Usability and predictability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/bounded-lookup-load
+   :name "bounded load on external services"
+   :desc "Live lookups use batching and a fixed number of concurrent requests."
+   :doc "### Scenario
+
+A large SBOM is looked up on OSV, deps.dev or the GitHub Advisory Database.
+
+### Measure
+
+The number of concurrent requests is bounded per adapter (fixed thread pool) and OSV requests are chunked. No time budget or concurrency target is defined, and the defaults are partly guesses (see risk external-service-limits). Inferred from the code.
+
+### Quality attribute
+
+Performance efficiency and resource use."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/pure-domain-core
+   :name "pure, I/O-free domain core"
+   :desc "Domain and application code know neither SBOM formats nor I/O, and dependencies point inward."
+   :doc "### Scenario
+
+A developer changes parsing, scoring or policy logic.
+
+### Measure
+
+The domain layer has no dependency on application or adapter code, and adapters parse into the canonical SBOM model. This can be checked by the code model's :dependency relations. Source: AGENTS.md (architecture rules).
+
+### Quality attribute
+
+Maintainability and testability."
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/fault-tolerant-lookups
+   :name "lookup failures do not abort the run"
+   :desc "A failed live lookup is reported as a warning and the remaining results are still produced."
+   :doc "### Scenario
+
+A vulnerability service times out or returns an error for some components.
+
+### Measure
+
+The run completes with the data available. A failed chunk or id is dropped with a warning on stderr. The downside is recorded in the risk failed-lookup-looks-like-clean-result. Inferred from the code.
+
+### Quality attribute
+
+Reliability (fault tolerance)."
+   :tags #{"quality"}}
+
+  {:el :implements
+   :id :sbom-tool.decision/separate-exit-codes-implements-stable-exit-codes
+   :from :sbom-tool.decision/separate-exit-codes-per-failure-category
+   :to :sbom-tool.requirement/stable-exit-codes}
+
+  {:el :implements
+   :id :sbom-tool.requirement/stable-exit-codes-implements-ci-gate-goal
+   :from :sbom-tool.requirement/stable-exit-codes
+   :to :sbom-tool.goal/ci-gate}
+
+  {:el :implements
+   :id :sbom-tool.decision/typed-exceptions-implements-actionable-diagnostics
+   :from :sbom-tool.decision/typed-exceptions-with-friendly-messages
+   :to :sbom-tool.requirement/actionable-diagnostics}
+
+  {:el :implements
+   :id :sbom-tool.decision/diagnostics-on-stderr-implements-actionable-diagnostics
+   :from :sbom-tool.decision/diagnostics-on-stderr
+   :to :sbom-tool.requirement/actionable-diagnostics}
+
+  {:el :implements
+   :id :sbom-tool.requirement/actionable-diagnostics-implements-sbom-tool
+   :from :sbom-tool.requirement/actionable-diagnostics
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.requirement/predictable-report-order-implements-vulnerability-reporting-goal
+   :from :sbom-tool.requirement/predictable-report-order
+   :to :sbom-tool.goal/vulnerability-reporting}
+
+  {:el :implements
+   :id :sbom-tool.requirement/predictable-report-order-implements-license-reporting-goal
+   :from :sbom-tool.requirement/predictable-report-order
+   :to :sbom-tool.goal/license-reporting}
+
+  {:el :implements
+   :id :sbom-tool.decision/bounded-concurrent-lookups-implements-bounded-lookup-load
+   :from :sbom-tool.decision/bounded-concurrent-lookups
+   :to :sbom-tool.requirement/bounded-lookup-load}
+
+  {:el :implements
+   :id :sbom-tool.requirement/bounded-lookup-load-implements-live-vulnerability-lookup-goal
+   :from :sbom-tool.requirement/bounded-lookup-load
+   :to :sbom-tool.goal/live-vulnerability-lookup}
+
+  {:el :implements
+   :id :sbom-tool.decision/clean-architecture-layering-implements-pure-domain-core
+   :from :sbom-tool.decision/clean-architecture-layering
+   :to :sbom-tool.requirement/pure-domain-core}
+
+  {:el :implements
+   :id :sbom-tool.decision/shared-domain-parsers-implements-pure-domain-core
+   :from :sbom-tool.decision/shared-domain-parsers
+   :to :sbom-tool.requirement/pure-domain-core}
+
+  {:el :implements
+   :id :sbom-tool.requirement/pure-domain-core-implements-sbom-tool
+   :from :sbom-tool.requirement/pure-domain-core
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.decision/opt-in-fail-soft-live-lookup-implements-fault-tolerant-lookups
+   :from :sbom-tool.decision/opt-in-fail-soft-live-lookup
+   :to :sbom-tool.requirement/fault-tolerant-lookups}
+
+  {:el :implements
+   :id :sbom-tool.decision/failure-policy-implements-fault-tolerant-lookups
+   :from :sbom-tool.decision/failure-policy-by-input-kind
+   :to :sbom-tool.requirement/fault-tolerant-lookups}
+
+  {:el :implements
+   :id :sbom-tool.requirement/fault-tolerant-lookups-implements-live-vulnerability-lookup-goal
+   :from :sbom-tool.requirement/fault-tolerant-lookups
+   :to :sbom-tool.goal/live-vulnerability-lookup}
+
+  ;; Proposed security requirements, derived from the security assessment at commit 5279795.
+  ;; They state target behavior that the code does not meet yet (see the linked risks).
+  {:el :requirement
+   :id :sbom-tool.requirement/safe-report-output
+   :name "report output is safe to render"
+   :desc "Untrusted text in reports is escaped for the output format, and only http(s) URLs become links."
+   :doc "### Scenario
+
+A report built from an untrusted SBOM or from external service data is rendered in a CI summary, wiki or PR comment.
+
+### Measure
+
+Component names, license names and advisory text cannot add markup, and link targets with schemes other than http and https are not rendered as links. Verifiable with a test SBOM that carries markdown and javascript: URLs. Not met yet (see risk unsanitized-markdown-output).
+
+### Quality attribute
+
+Security (output integrity)."
+   :maturity :proposed
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/bounded-network-calls
+   :name "network calls are bounded in time and size"
+   :desc "Every live lookup request has a connect and request timeout and a response size cap, and a timeout counts as a failed lookup."
+   :doc "### Scenario
+
+A vulnerability service stalls, answers slowly or returns a huge body during a CI run.
+
+### Measure
+
+The run ends within a bounded time and memory use stays bounded. The timeout and size values are not defined yet and need a maintainer decision. Not met yet (see risk no-network-timeouts-or-size-limits).
+
+### Quality attribute
+
+Reliability and resource use, security (availability)."
+   :maturity :proposed
+   :tags #{"quality"}}
+
+  {:el :requirement
+   :id :sbom-tool.requirement/credentials-only-to-own-service
+   :name "credentials are sent only to their own service"
+   :desc "An API key is sent only to the host of the service it belongs to, over HTTPS, and is never printed or logged."
+   :doc "### Scenario
+
+A user supplies a GitHub or OSV API key through a key file or an environment variable.
+
+### Measure
+
+The key appears only in the Authorization (or X-Goog-Api-Key) header of requests to the service's own host. Followed URLs such as pagination links are checked against that host. The key is never written to stdout, stderr or reports. Partly met: not printed (inspected); host check missing (see risk pagination-url-not-pinned-to-host).
+
+### Quality attribute
+
+Security (confidentiality)."
+   :maturity :proposed
+   :tags #{"quality"}}
+
+  {:el :implements
+   :id :sbom-tool.requirement/safe-report-output-implements-sbom-tool
+   :from :sbom-tool.requirement/safe-report-output
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.requirement/safe-report-output-implements-multi-format-output-goal
+   :from :sbom-tool.requirement/safe-report-output
+   :to :sbom-tool.goal/multi-format-output}
+
+  {:el :implements
+   :id :sbom-tool.requirement/bounded-network-calls-implements-sbom-tool
+   :from :sbom-tool.requirement/bounded-network-calls
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.requirement/bounded-network-calls-implements-ci-gate-goal
+   :from :sbom-tool.requirement/bounded-network-calls
+   :to :sbom-tool.goal/ci-gate}
+
+  {:el :implements
+   :id :sbom-tool.requirement/credentials-only-to-own-service-implements-sbom-tool
+   :from :sbom-tool.requirement/credentials-only-to-own-service
+   :to :sbom-tool/sbom-tool}
+
+  {:el :implements
+   :id :sbom-tool.decision/configuration-and-secrets-implements-credentials-only-to-own-service
+   :from :sbom-tool.decision/configuration-and-secrets-handling
+   :to :sbom-tool.requirement/credentials-only-to-own-service}
+  ;
+  }

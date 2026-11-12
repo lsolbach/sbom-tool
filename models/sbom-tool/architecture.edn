@@ -22,6 +22,66 @@
    :name "CI/CD Pipeline"
    :desc "Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations."}
 
+  {:el :system
+   :id :sbom-tool/osv
+   :external true
+   :name "OSV"
+   :desc "Google's open source vulnerability database (osv.dev), queried by purl."}
+
+  {:el :system
+   :id :sbom-tool/deps-dev
+   :external true
+   :name "deps.dev"
+   :desc "Google's open source insights service (deps.dev), queried by purl for vulnerability data."}
+
+  {:el :system
+   :id :sbom-tool/github-advisory
+   :external true
+   :name "GitHub Advisory Database"
+   :desc "GitHub's advisory database, queried through the GitHub REST API."}
+
+  {:el :request
+   :id :sbom-tool/sbom-tool-requests-osv
+   :from :sbom-tool/sbom-tool
+   :to :sbom-tool/osv
+   :name "Looks up vulnerabilities (opt-in)"
+   :tech "HTTPS/JSON"}
+
+  {:el :request
+   :id :sbom-tool/sbom-tool-requests-deps-dev
+   :from :sbom-tool/sbom-tool
+   :to :sbom-tool/deps-dev
+   :name "Looks up vulnerabilities (opt-in)"
+   :tech "HTTPS/JSON"}
+
+  {:el :request
+   :id :sbom-tool/sbom-tool-requests-github-advisory
+   :from :sbom-tool/sbom-tool
+   :to :sbom-tool/github-advisory
+   :name "Looks up vulnerabilities (opt-in)"
+   :tech "HTTPS/JSON"}
+
+  {:el :request
+   :id :sbom-tool/cli-requests-osv
+   :from :sbom-tool/cli
+   :to :sbom-tool/osv
+   :name "Looks up vulnerabilities (opt-in)"
+   :tech "HTTPS/JSON"}
+
+  {:el :request
+   :id :sbom-tool/cli-requests-deps-dev
+   :from :sbom-tool/cli
+   :to :sbom-tool/deps-dev
+   :name "Looks up vulnerabilities (opt-in)"
+   :tech "HTTPS/JSON"}
+
+  {:el :request
+   :id :sbom-tool/cli-requests-github-advisory
+   :from :sbom-tool/cli
+   :to :sbom-tool/github-advisory
+   :name "Looks up vulnerabilities (opt-in)"
+   :tech "HTTPS/JSON"}
+
   {:el :uses
    :id :sbom-tool/user-uses-generate-license-report
    :from :sbom-tool/user

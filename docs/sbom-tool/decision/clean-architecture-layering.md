@@ -7,6 +7,11 @@ The codebase is structured as domain/application/adapter layers (src/sbom_tool/d
 ## Tags
 solution strategy
 
+## Implemented Requirements
+| Requirement | Description |
+|---|---|
+| [pure, I/O-free domain core](../../sbom-tool/requirement/pure-domain-core.md) | Domain and application code know neither SBOM formats nor I/O, and dependencies point inward. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

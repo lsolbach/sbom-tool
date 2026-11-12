@@ -4,9 +4,17 @@
 Let a pipeline fail the build on policy violations via a dedicated exit code, distinct from usage and runtime errors.
 
 
+## Implementing Requirements
+| Requirement | Description |
+|---|---|
+| [network calls are bounded in time and size](../../sbom-tool/requirement/bounded-network-calls.md) | Every live lookup request has a connect and request timeout and a response size cap, and a timeout counts as a failed lookup. |
+| [stable, distinct exit codes](../../sbom-tool/requirement/stable-exit-codes.md) | The process exit code tells success, policy violation, runtime error and usage error apart. |
+
 ## Implementing Decisions
 | Decision | Description |
 |---|---|
+| [fail loudly on user-supplied inputs, degrade gracefully on remote lookups](../../sbom-tool/decision/failure-policy-by-input-kind.md) | A file the user names explicitly (SBOM, policy, VEX, SPDX list, key file) that is missing or malformed aborts the run; a failed remote lookup or an empty input directory only warns. |
+| [report failures as typed exceptions rendered by one CLI formatter](../../sbom-tool/decision/typed-exceptions-with-friendly-messages.md) | Adapters and the core throw ex-info with an :sbom-tool/error-type; the CLI turns each type into a short message and an exit code, and --debug adds the full cause chain. |
 | [separate exit codes per failure category](../../sbom-tool/decision/separate-exit-codes-per-failure-category.md) | Split the CLI's exit code for usage errors from the one for --fail-on-violations policy violations, which previously both exited 1; usage errors, policy violations and runtime/data errors now each have their own code (0/1/2/3, see dev/plans/cli-error-codes.md), forming a stable contract for CI/CD consumers. |
 
 

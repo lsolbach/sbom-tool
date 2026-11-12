@@ -4,6 +4,17 @@
 Render any report as EDN, JSON or Markdown, for both tooling and human consumption (e.g. PR summaries).
 
 
+## Implementing Requirements
+| Requirement | Description |
+|---|---|
+| [extensible formats and sources](../../sbom-tool/requirement/extensible-formats-and-sources.md) | SBOM formats, policy formats, report formats and vulnerability sources can be added without changing the core. |
+| [report output is safe to render](../../sbom-tool/requirement/safe-report-output.md) | Untrusted text in reports is escaped for the output format, and only http(s) URLs become links. |
+
+## Implementing Decisions
+| Decision | Description |
+|---|---|
+| [extend input and output formats through multimethod extension points](../../sbom-tool/decision/multimethod-extension-points.md) | The application layer defines multimethods (repository/read-sboms, read-policies, read-vulnerability-sources, template/render); adapters register formats and sources with defmethod, so the core knows neither formats nor I/O. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

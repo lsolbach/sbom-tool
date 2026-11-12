@@ -4,6 +4,11 @@
 Merge components describing the same package across multiple SBOM documents (matched by purl, falling back to cpe) into one consolidated view.
 
 
+## Implementing Decisions
+| Decision | Description |
+|---|---|
+| [keep provenance and report disagreements instead of silently resolving them](../../sbom-tool/decision/provenance-and-conflict-reporting.md) | Merged components keep their sources and a :conflicts map where source documents disagree, and every report carries it; each vulnerability keeps its own source. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

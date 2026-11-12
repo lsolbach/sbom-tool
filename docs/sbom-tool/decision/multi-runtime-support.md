@@ -7,6 +7,11 @@ Beyond `lein run`, the tool also runs as a prebuilt uberjar and as a Babashka sc
 ## Tags
 solution strategy
 
+## Implemented Requirements
+| Requirement | Description |
+|---|---|
+| [runs on the JVM and under babashka](../../sbom-tool/requirement/jvm-and-babashka-portability.md) | Source namespaces load and run identically as an uberjar on the JVM and under babashka. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

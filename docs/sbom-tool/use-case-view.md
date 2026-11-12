@@ -49,7 +49,10 @@ Shows the use cases and actors of the SBOM Tool
 | System | Description |
 |---|---|
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md)| Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations. |
+| [GitHub Advisory Database](../sbom-tool/github-advisory.md)| GitHub's advisory database, queried through the GitHub REST API. |
+| [OSV](../sbom-tool/osv.md)| Google's open source vulnerability database (osv.dev), queried by purl. |
 | [SBOM Tool](../sbom-tool/sbom-tool.md)| Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance. |
+| [deps.dev](../sbom-tool/deps-dev.md)| Google's open source insights service (deps.dev), queried by purl for vulnerability data. |
 
 ## Containers
 | Container | Description |

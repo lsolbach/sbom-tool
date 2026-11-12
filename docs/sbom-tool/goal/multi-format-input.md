@@ -4,6 +4,16 @@
 Read CycloneDX 1.6 and SPDX 2.2/2.3 SBOM files, with room to add further formats and versions.
 
 
+## Implementing Requirements
+| Requirement | Description |
+|---|---|
+| [extensible formats and sources](../../sbom-tool/requirement/extensible-formats-and-sources.md) | SBOM formats, policy formats, report formats and vulnerability sources can be added without changing the core. |
+
+## Implementing Decisions
+| Decision | Description |
+|---|---|
+| [extend input and output formats through multimethod extension points](../../sbom-tool/decision/multimethod-extension-points.md) | The application layer defines multimethods (repository/read-sboms, read-policies, read-vulnerability-sources, template/render); adapters register formats and sources with defmethod, so the core knows neither formats nor I/O. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

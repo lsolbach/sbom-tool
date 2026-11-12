@@ -2,7 +2,10 @@
 left to right direction
 title Use Cases of the SBOM Tool
 usecase "generate copyright report" as (sbomTool_usecase_generateCopyrightReport) #BBBBFF
+actor "GitHub Advisory Database" as sbomTool_githubAdvisory
+actor "deps.dev" as sbomTool_depsDev
 actor "CI/CD Pipeline" as sbomTool_ciPipeline
+actor "OSV" as sbomTool_osv
 usecase "analyze SBOM compliance" as (sbomTool_usecase_analyzeSbomCompliance) #FFFFFF
 usecase "look up vulnerabilities" as (sbomTool_usecase_lookupVulnerabilities) #8888DD
 actor "User" as sbomTool_user

@@ -13,6 +13,12 @@ Clojure
 |---|---|---|---|---|
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md) | Invokes | [SBOM Tool CLI](../sbom-tool/cli.md) | CLI |  |
 | [User](../sbom-tool/user.md) | Runs | [SBOM Tool CLI](../sbom-tool/cli.md) | CLI |  |
+## Outgoing Synchronous Requests 
+| From | Name | To | Technology | Description |
+|---|---|---|---|---|
+| [SBOM Tool CLI](../sbom-tool/cli.md) | Looks up vulnerabilities (opt-in) | [GitHub Advisory Database](../sbom-tool/github-advisory.md) | HTTPS/JSON |  |
+| [SBOM Tool CLI](../sbom-tool/cli.md) | Looks up vulnerabilities (opt-in) | [deps.dev](../sbom-tool/deps-dev.md) | HTTPS/JSON |  |
+| [SBOM Tool CLI](../sbom-tool/cli.md) | Looks up vulnerabilities (opt-in) | [OSV](../sbom-tool/osv.md) | HTTPS/JSON |  |
 
 ## Container View
 ![Container View for the SBOM Tool](../sbom-tool/container-view.png)

@@ -4,6 +4,16 @@
 Report the set of licenses in the SBOMs, licenses per component, and usage of blacklisted or greylisted licenses.
 
 
+## Implementing Requirements
+| Requirement | Description |
+|---|---|
+| [predictable report ordering](../../sbom-tool/requirement/predictable-report-order.md) | Reports list vulnerabilities by severity and license counts in a defined order. |
+
+## Implementing Decisions
+| Decision | Description |
+|---|---|
+| [let a license review resolve open cases but never override the blacklist](../../sbom-tool/decision/reviewed-never-overrides-blacklist.md) | A reviewed component overrides grey, unidentified and no-license statuses only; blacklisted and whitelisted results stay as computed, and proprietary, reviewed or no-license components never affect the exit status. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

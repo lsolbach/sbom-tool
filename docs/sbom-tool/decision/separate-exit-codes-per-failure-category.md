@@ -7,6 +7,11 @@ Split the CLI's exit code for usage errors from the one for --fail-on-violations
 ## Tags
 solution strategy
 
+## Implemented Requirements
+| Requirement | Description |
+|---|---|
+| [stable, distinct exit codes](../../sbom-tool/requirement/stable-exit-codes.md) | The process exit code tells success, policy violation, runtime error and usage error apart. |
+
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)
