@@ -154,6 +154,15 @@ documents themselves declared (see the disclaimer above).
 
 Live lookups can be enabled with the `-D` flag.
 
+All live lookups share the same network safeguards. Every request has a 10 second connect timeout
+and a 30 second request timeout, and a response larger than 20 MiB is rejected; these limits are
+fixed, not configurable. Requests -- and with them any API key -- are sent only over HTTPS to the
+host of the selected service: a pagination link pointing to another host or to plain HTTP is
+refused, and redirects are not followed. A request that exceeds a limit or is refused counts as a
+failed lookup like any other: a warning on stderr, no additional vulnerabilities for the affected
+components, and the run continues. A run against an endpoint that stalls therefore ends after the
+timeout instead of hanging.
+
 #### deps.dev
 
 Passing `-D deps-dev`/

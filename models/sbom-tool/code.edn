@@ -20,6 +20,11 @@
    :desc "Adapters for SBOM, license and VEX formats, vulnerability databases, policy files, report rendering and the CLI."}
 
   {:el :package
+   :id :sbom-tool.code/util
+   :name "sbom-tool.util"
+   :desc "General helpers. Its namespaces are leaves: they depend on no other project namespace and may be used from any layer."}
+
+  {:el :package
    :id :sbom-tool.code.adapter/sbom
    :name "sbom-tool.adapter.sbom"
    :desc "SBOM format adapters."}
@@ -90,6 +95,16 @@
    :id :sbom-tool.code.application/template
    :name "sbom-tool.application.template"
    :desc "Extension point for rendering a report's data in an output format."}
+
+  {:el :namespace
+   :id :sbom-tool.code.util/functions
+   :name "sbom-tool.util.functions"
+   :desc "Bounded concurrency, warnings on stderr, URL encoding and API key file reading."}
+
+  {:el :namespace
+   :id :sbom-tool.code.adapter/http
+   :name "sbom-tool.adapter.http"
+   :desc "HTTP and JSON requests for the live vulnerability adapters: timeouts, response size cap, no redirects, requests pinned to the service's https host."}
 
   {:el :namespace
    :id :sbom-tool.code.adapter/policies
@@ -182,6 +197,11 @@
    :from :sbom-tool.code.application/report :to :sbom-tool.code/application}
   {:el :contained-in :id :sbom-tool.code.application/template-contained-in-application
    :from :sbom-tool.code.application/template :to :sbom-tool.code/application}
+
+  {:el :contained-in :id :sbom-tool.code.util/functions-contained-in-util
+   :from :sbom-tool.code.util/functions :to :sbom-tool.code/util}
+  {:el :contained-in :id :sbom-tool.code.adapter/http-contained-in-adapter
+   :from :sbom-tool.code.adapter/http :to :sbom-tool.code/adapter}
 
   {:el :contained-in :id :sbom-tool.code.adapter/policies-contained-in-adapter
    :from :sbom-tool.code.adapter/policies :to :sbom-tool.code/adapter}
@@ -282,9 +302,23 @@
    :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.domain/purl}
   {:el :dependency :id :sbom-tool.code.adapter.vulnerability/github-advisory-depends-on-domain-sbom
    :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.domain/sbom}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/osv-depends-on-adapter-http
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.adapter/http}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/osv-depends-on-util-functions
+   :from :sbom-tool.code.adapter.vulnerability/osv :to :sbom-tool.code.util/functions}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/deps-dev-depends-on-adapter-http
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.adapter/http}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/deps-dev-depends-on-util-functions
+   :from :sbom-tool.code.adapter.vulnerability/deps-dev :to :sbom-tool.code.util/functions}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/github-advisory-depends-on-adapter-http
+   :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.adapter/http}
+  {:el :dependency :id :sbom-tool.code.adapter.vulnerability/github-advisory-depends-on-util-functions
+   :from :sbom-tool.code.adapter.vulnerability/github-advisory :to :sbom-tool.code.util/functions}
 
   {:el :dependency :id :sbom-tool.code.adapter.vex/openvex-depends-on-domain-vex
    :from :sbom-tool.code.adapter.vex/openvex :to :sbom-tool.code.domain/vex}
+  {:el :dependency :id :sbom-tool.code.adapter.vex/openvex-depends-on-util-functions
+   :from :sbom-tool.code.adapter.vex/openvex :to :sbom-tool.code.util/functions}
 
   {:el :dependency :id :sbom-tool.code.adapter.report/markdown-depends-on-application-template
    :from :sbom-tool.code.adapter.report/markdown :to :sbom-tool.code.application/template}

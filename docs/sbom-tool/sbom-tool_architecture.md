@@ -105,7 +105,7 @@ Reads CycloneDX and SPDX software bill of materials files and reports on license
 | [normalize SBOM formats into one canonical model](../sbom-tool/decision/canonical-sbom-model.md) | Format-specific adapters (CycloneDX, SPDX) must parse into one canonical SBOM model (AGENTS.md), so reporting and policy logic is written once, independent of the input format. |
 | [resolve conflicting VEX statements to the most conservative status](../sbom-tool/decision/vex-most-conservative-status-wins.md) | VEX statements are applied only via an explicit --vex-path; when several match, affected beats under-investigation beats fixed beats not-affected, so a stale not-affected claim cannot hide an affected one. |
 | [separate exit codes per failure category](../sbom-tool/decision/separate-exit-codes-per-failure-category.md) | Split the CLI's exit code for usage errors from the one for --fail-on-violations policy violations, which previously both exited 1; usage errors, policy violations and runtime/data errors now each have their own code (0/1/2/3, see dev/plans/cli-error-codes.md), forming a stable contract for CI/CD consumers. |
-| [share the vulnerability adapters' HTTP infrastructure in one adapter-internal namespace](../sbom-tool/decision/shared-adapter-support.md) | PROPOSED: the osv, deps-dev and github-advisory adapters use one shared support namespace for HTTP calls, key reading, bounded concurrency and warnings. |
+| [share the adapters' HTTP infrastructure in adapter.http and general helpers in util](../sbom-tool/decision/shared-adapter-support.md) | The osv, deps-dev and github-advisory adapters share one HTTP namespace (adapter.http) and general helpers in the util folder for key reading, bounded concurrency and warnings. |
 | [support uberjar and Babashka execution](../sbom-tool/decision/multi-runtime-support.md) | Beyond `lein run`, the tool also runs as a prebuilt uberjar and as a Babashka script (bb.edn), so it can be used without a Leiningen installation (see README.md). |
 | [use Leiningen as the build tool](../sbom-tool/decision/leiningen-build.md) | Leiningen (project.clj) manages dependencies, runs tests and produces the uberjar. |
 
@@ -210,8 +210,6 @@ Reads CycloneDX and SPDX software bill of materials files and reports on license
 | Risk | Description |
 |---|---|
 | [CVSS v4 vectors are not scored](../sbom-tool/risk/cvss-v4-not-scored.md) | Only CVSS v2 and v3 are parsed, so findings that carry only a v4 vector rate as :unknown. |
-| [GitHub pagination URL is followed with the API token and no host check](../sbom-tool/risk/pagination-url-not-pinned-to-host.md) | The rel=next URL from the Link header is requested with the same headers, including the Authorization bearer token, without checking scheme or host. |
-| [HTTP calls have no timeouts and no response size limit](../sbom-tool/risk/no-network-timeouts-or-size-limits.md) | The vulnerability adapters use a default HttpClient without connect or request timeout and read whole response bodies, so a stalled endpoint hangs the run. |
 | [VEX conflict resolution may be too coarse](../sbom-tool/risk/vex-conflict-precedence-coarse.md) | The most conservative status always wins, so a supplier's later, corrected not-affected statement can never override an older affected one. |
 | [assumptions about external APIs are unverified](../sbom-tool/risk/unverified-external-api-assumptions.md) | The OSV API-key header and the GitHub 'affects' version filtering rest on guesses recorded in the plans. |
 | [failed vulnerability lookup is indistinguishable from no findings](../sbom-tool/risk/failed-lookup-looks-like-clean-result.md) | A failed live lookup only warns on stderr and yields no vulnerabilities, so --fail-on-violations can pass on incomplete data. |
@@ -228,12 +226,9 @@ Reads CycloneDX and SPDX software bill of materials files and reports on license
 
 | Risk | Description |
 |---|---|
+| [SBOM adapters print their warnings inline](../sbom-tool/risk/duplicated-warn-helpers.md) | The cdx and spdx adapters print 'Warning: ...' to stderr inline instead of using the shared util.functions/warn. |
 | [SPDX license list not used as the source of truth](../sbom-tool/risk/spdx-license-list-underused.md) | Identifiability is decided by a LicenseRef- prefix heuristic, and the list's deprecated flag is read but not reported. |
 | [application state is one global atom](../sbom-tool/risk/global-mutable-state.md) | repository/state is a single atom that adapters fill and every report function reads implicitly, which hides data flow and blocks library use. |
-| [bounded-pmap duplicated in three adapters](../sbom-tool/risk/duplicated-bounded-pmap.md) | The same fixed-thread-pool helper is copied into the osv, deps-dev and github-advisory adapters, so a fix must be applied three times. |
-| [leftover debug println writes request URLs to stdout](../sbom-tool/risk/debug-println-to-stdout.md) | The osv, deps-dev and github-advisory adapters print 'Fetching URL: ...' to stdout, which pollutes report output and logs package names. |
-| [vulnerability adapters duplicate their HTTP infrastructure](../sbom-tool/risk/duplicated-adapter-infrastructure.md) | osv, deps-dev and github-advisory each carry their own HTTP client, request and error handling, API-key file reader, warn and bounded-pmap. |
-| [warning helper duplicated per adapter](../sbom-tool/risk/duplicated-warn-helpers.md) | Each vulnerability and VEX adapter defines its own private warn function that prints 'Warning: ...' to stderr. |
 
 <!-- PA-BEGIN(TechnicalDebt2) -->
 <!-- PA-END(TechnicalDebt2) -->

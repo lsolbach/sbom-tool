@@ -1,7 +1,7 @@
 
-# warning helper duplicated per adapter (Risk)
+# SBOM adapters print their warnings inline (Risk)
 ## Description
-Each vulnerability and VEX adapter defines its own private warn function that prints 'Warning: ...' to stderr.
+The cdx and spdx adapters print 'Warning: ...' to stderr inline instead of using the shared util.functions/warn.
 
 
 ## Tags
@@ -10,15 +10,15 @@ technical debt
 ## Documentation
 ### Description
 
-adapter.vex.openvex and the osv, deps-dev and github-advisory adapters each define a private warn, and the SBOM adapters print their warnings inline.
+adapter.sbom.cdx and adapter.sbom.spdx bind *err* and println their warnings inline. The vulnerability and VEX adapters already use the shared util.functions/warn (decision shared-adapter-support).
 
 ### Impact
 
-The warning format and the destination stream can drift. Changing diagnostics (e.g. adding a verbosity switch) means touching every adapter.
+The warning format and the destination stream can drift. Changing diagnostics (e.g. adding a verbosity switch) means touching these call sites too. Low: there is one call site per adapter.
 
 ### Mitigation
 
-Introduce one shared diagnostics function, together with the bounded-pmap extraction.
+Use util.functions/warn in the two adapters. Not started.
 
 
 ## Navigation

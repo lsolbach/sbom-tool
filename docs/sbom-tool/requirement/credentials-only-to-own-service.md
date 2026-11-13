@@ -14,7 +14,7 @@ A user supplies a GitHub or OSV API key through a key file or an environment var
 
 ### Measure
 
-The key appears only in the Authorization (or X-Goog-Api-Key) header of requests to the service's own host. Followed URLs such as pagination links are checked against that host. The key is never written to stdout, stderr or reports. Partly met: not printed (inspected); host check missing (see risk pagination-url-not-pinned-to-host).
+The key appears only in the Authorization (or X-Goog-Api-Key) header of requests to the service's own host. Every request, including followed pagination links, is checked by adapter.http to be an https URL on that host before it is sent. The key is never written to stdout, stderr or reports. Met: not printed (inspected); host check in adapter.http, verified by tests.
 
 ### Quality attribute
 
@@ -24,7 +24,7 @@ Security (confidentiality).
 | Decision | Description |
 |---|---|
 | [configure through CLI options and EDN files, and keep API keys out of the command line](../../sbom-tool/decision/configuration-and-secrets-handling.md) | Behavior is set by CLI options and EDN policy files validated with clojure.spec, with bundled defaults; API keys come from an EDN file or an environment variable, never from an option value. |
-| [share the vulnerability adapters' HTTP infrastructure in one adapter-internal namespace](../../sbom-tool/decision/shared-adapter-support.md) | PROPOSED: the osv, deps-dev and github-advisory adapters use one shared support namespace for HTTP calls, key reading, bounded concurrency and warnings. |
+| [share the adapters' HTTP infrastructure in adapter.http and general helpers in util](../../sbom-tool/decision/shared-adapter-support.md) | The osv, deps-dev and github-advisory adapters share one HTTP namespace (adapter.http) and general helpers in the util folder for key reading, bounded concurrency and warnings. |
 
 
 ## Navigation

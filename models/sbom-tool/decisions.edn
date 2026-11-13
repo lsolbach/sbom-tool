@@ -411,34 +411,33 @@ adapter/vulnerability/osv.clj, deps_dev.clj and github_advisory.clj (bounded-pma
 
   {:el :decision
    :id :sbom-tool.decision/shared-adapter-support
-   :name "share the vulnerability adapters' HTTP infrastructure in one adapter-internal namespace"
-   :desc "PROPOSED: the osv, deps-dev and github-advisory adapters use one shared support namespace for HTTP calls, key reading, bounded concurrency and warnings."
+   :name "share the adapters' HTTP infrastructure in adapter.http and general helpers in util"
+   :desc "The osv, deps-dev and github-advisory adapters share one HTTP namespace (adapter.http) and general helpers in the util folder for key reading, bounded concurrency and warnings."
    :doc "### Status
 
-Proposed. Not accepted; only the maintainer accepts it.
+Accepted.
 
 ### Context
 
-The three vulnerability adapters duplicate their HTTP client, error handling, key-file reading, bounded-pmap and warn (risks duplicated-adapter-infrastructure, duplicated-bounded-pmap, duplicated-warn-helpers). The open security findings (risks no-network-timeouts-or-size-limits, pagination-url-not-pinned-to-host, debug-println-to-stdout) and the proposed requirements bounded-network-calls and credentials-only-to-own-service are cross-cutting and would otherwise be fixed three times. The plans chose duplication earlier (decision bounded-concurrent-lookups). Layering is decided in clean-architecture-layering.
+The vulnerability adapters (osv, deps-dev, github-advisory) all need the same HTTP client with timeouts and a response size limit, host-pinned requests, key-file reading, bounded concurrency and diagnostics on stderr. These concerns are cross-cutting (requirements bounded-network-calls and credentials-only-to-own-service) and would otherwise be implemented and fixed once per adapter. Layering is decided in clean-architecture-layering.
 
 ### Options
 
 1. Do nothing: keep three copies and fix each one.
-2. One shared support namespace inside the adapter layer (for example adapter.http), used by the vulnerability adapters.
+2. Shared code inside the adapter layer, used by the vulnerability adapters: the HTTP code in one namespace (adapter.http) and the general helpers in namespaces in a util folder.
 3. Move the helpers into the application layer.
 
-### Decision (proposed)
+### Decision
 
-Option 2. A single place sets the timeouts and the response size limit, keeps credentials to their own host, reads key files and prints diagnostics to stderr. Option 3 is not recommended: the helpers are I/O and belong in the adapter layer. Option 1 is cheapest today but multiplies every future fix and every new adapter (NVD).
+Option 2. adapter.http sets the timeouts and the response size limit and keeps credentials to their own host. The general helpers (key file reading, bounded concurrency, URL encoding, diagnostics on stderr) live in namespaces in the util folder (src/sbom_tool/util), initially one namespace, util.functions. Option 3 is rejected: the helpers are I/O and belong in the adapter layer. Option 1 is cheapest at first but multiplies every fix and every new adapter.
 
 ### Consequences
 
-Benefits: one fix point, smaller adapters, a consistent failure mode (a timeout becomes a failed lookup). Costs: a first dependency between adapter namespaces, which needs a sentence in the layering rules in AGENTS.md (a layer boundary change, so the maintainer decides it, tier 3). It supersedes the duplication stated in the consequences of bounded-concurrent-lookups, which stays as written until this decision is accepted. Reversible. Babashka compatibility must be kept (requirement jvm-and-babashka-portability).
+Benefits: one fix point, smaller adapters, a consistent failure mode (a timeout becomes a failed lookup). Costs: adapter namespaces may now depend on each other as long as no cycle is introduced, and the util folder is a new place whose namespaces are leaves (depend on no other project namespace) and may be used from any layer; both rules are stated in AGENTS.md. It supersedes the duplication stated in the consequences of bounded-concurrent-lookups. Reversible. Babashka compatibility must be kept (requirement jvm-and-babashka-portability).
 
 ### Evidence
 
-adapter/vulnerability/osv.clj, deps_dev.clj, github_advisory.clj at commit 5279795; architecture and security assessments of this date."
-   :maturity :proposed
+adapter/http.clj, util/functions.clj and their tests; dev/plans/shared-adapter-support.md."
    :tags #{"solution strategy"}}
 
   {:el :implements

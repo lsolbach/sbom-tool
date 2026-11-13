@@ -41,6 +41,8 @@ The agent skills in [.claude/skills](.claude/skills) are project-independent. Th
 
 ## Architecture Rules
 * Clean Architecture layers in `src/sbom_tool`: `domain`, `application`, `adapter`. Dependencies point inward. Adapters parse SBOM formats into the canonical SBOM model; the core knows neither formats nor I/O.
+* Adapter namespaces may depend on each other as long as no cycles are introduced.
+* `src/sbom_tool/util` holds general helpers. Its namespaces (e.g. `sbom-tool.util.functions`) are leaves: they depend on no other project namespace and may be used from any layer.
 * Model ids use the namespace prefix `sbom-tool` (e.g. `:sbom-tool.decision/...`, `:sbom-tool.goal/...`).
 * Public contracts (changes are Tier 3 in the model change policy): CLI options and exit codes, the policy file formats, the report output formats, the supported SBOM formats and versions.
 

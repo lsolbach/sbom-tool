@@ -15,7 +15,8 @@
   (:require [cheshire.core :as json]
             [babashka.fs :as fs]
             [clojure.string :as string]
-            [sbom-tool.domain.vex :as vex]))
+            [sbom-tool.domain.vex :as vex]
+            [sbom-tool.util.functions :as fns]))
 
 (def ^:private json-processing-exception-class
   "Resolved via `Class/forName` rather than referenced as a `catch` class
@@ -122,11 +123,6 @@
           :purls (not-empty (into #{} (keep :purl) identifiers))
           :cpes (not-empty (into #{} (keep :cpe) identifiers))})))))
 
-(defn- warn
-  [msg]
-  (binding [*out* *err*]
-    (println (str "Warning: " msg))))
-
 (defn read-vex-statements
   "Reads every `*.vex.json` file under `path`, mapping every document's
    `statements` to the canonical `sbom-tool.domain.vex` model (dropping any
@@ -137,7 +133,7 @@
   (when path
     (let [files (vex-files path)]
       (when (empty? files)
-        (warn (str "no *.vex.json files found under " path)))
+        (fns/warn (str "no *.vex.json files found under " path)))
       (into []
             (comp (map read-vex-document)
                   (mapcat :statements)

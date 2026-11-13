@@ -14,7 +14,7 @@ A vulnerability service stalls, answers slowly or returns a huge body during a C
 
 ### Measure
 
-The run ends within a bounded time and memory use stays bounded. The timeout and size values are not defined yet and need a maintainer decision. Not met yet (see risk no-network-timeouts-or-size-limits).
+The run ends within a bounded time and memory use stays bounded: 10 seconds to connect, 30 seconds per request and 20 MiB per response (maintainer decision), redirects are not followed. Met by adapter.http (see plan dev/plans/shared-adapter-support.md), verified by tests with a local server.
 
 ### Quality attribute
 
@@ -23,7 +23,7 @@ Reliability and resource use, security (availability).
 ## Implementing Decisions
 | Decision | Description |
 |---|---|
-| [share the vulnerability adapters' HTTP infrastructure in one adapter-internal namespace](../../sbom-tool/decision/shared-adapter-support.md) | PROPOSED: the osv, deps-dev and github-advisory adapters use one shared support namespace for HTTP calls, key reading, bounded concurrency and warnings. |
+| [share the adapters' HTTP infrastructure in adapter.http and general helpers in util](../../sbom-tool/decision/shared-adapter-support.md) | The osv, deps-dev and github-advisory adapters share one HTTP namespace (adapter.http) and general helpers in the util folder for key reading, bounded concurrency and warnings. |
 
 
 ## Navigation

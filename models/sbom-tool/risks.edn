@@ -2,37 +2,20 @@
 ;;;; Risks and Technical Debt of the SBOM Tool (arc42 section 11)
 ;;;;
 #{{:el :risk
-   :id :sbom-tool.risk/duplicated-bounded-pmap
-   :name "bounded-pmap duplicated in three adapters"
-   :desc "The same fixed-thread-pool helper is copied into the osv, deps-dev and github-advisory adapters, so a fix must be applied three times."
-   :doc "### Description
-
-adapter.vulnerability.osv, deps-dev and github-advisory each define a private bounded-pmap. The plans chose to duplicate it locally rather than share it (dev/plans/osv-vulnerability-adapter.md). A shared helper would need a home that adapters may depend on without breaking the layering, e.g. a small utility namespace.
-
-### Impact
-
-Divergent fixes and behavior between adapters, and each future adapter (e.g. NVD) adds a fourth copy.
-
-### Mitigation
-
-Extract one shared helper. Not started."
-   :tags #{"technical debt"}}
-
-  {:el :risk
    :id :sbom-tool.risk/duplicated-warn-helpers
-   :name "warning helper duplicated per adapter"
-   :desc "Each vulnerability and VEX adapter defines its own private warn function that prints 'Warning: ...' to stderr."
+   :name "SBOM adapters print their warnings inline"
+   :desc "The cdx and spdx adapters print 'Warning: ...' to stderr inline instead of using the shared util.functions/warn."
    :doc "### Description
 
-adapter.vex.openvex and the osv, deps-dev and github-advisory adapters each define a private warn, and the SBOM adapters print their warnings inline.
+adapter.sbom.cdx and adapter.sbom.spdx bind *err* and println their warnings inline. The vulnerability and VEX adapters already use the shared util.functions/warn (decision shared-adapter-support).
 
 ### Impact
 
-The warning format and the destination stream can drift. Changing diagnostics (e.g. adding a verbosity switch) means touching every adapter.
+The warning format and the destination stream can drift. Changing diagnostics (e.g. adding a verbosity switch) means touching these call sites too. Low: there is one call site per adapter.
 
 ### Mitigation
 
-Introduce one shared diagnostics function, together with the bounded-pmap extraction."
+Use util.functions/warn in the two adapters. Not started."
    :tags #{"technical debt"}}
 
   {:el :risk
@@ -165,55 +148,6 @@ A crafted SBOM can inject links (any URL scheme) or break the report structure. 
 Escape markdown metacharacters in labels and allow only http and https URLs (see requirement safe-report-output). Not started."}
 
   {:el :risk
-   :id :sbom-tool.risk/no-network-timeouts-or-size-limits
-   :name "HTTP calls have no timeouts and no response size limit"
-   :desc "The vulnerability adapters use a default HttpClient without connect or request timeout and read whole response bodies, so a stalled endpoint hangs the run."
-   :doc "### Description
-
-osv, deps-dev and github-advisory create HttpClient/newHttpClient and send requests without a timeout. Bodies are read fully as strings, and the futures in bounded-pmap are awaited without a timeout. Found in the security assessment at commit 5279795 (osv only skimmed); confidence high for github-advisory and deps-dev.
-
-### Impact
-
-A stalled, slow or hostile endpoint or proxy blocks the process indefinitely, which is a denial of service for a CI job. Very large responses can exhaust memory.
-
-### Mitigation
-
-Set connect and request timeouts, treat a timeout as a failed lookup (see failed-lookup-looks-like-clean-result) and cap the response size (see requirement bounded-network-calls). Not started."}
-
-  {:el :risk
-   :id :sbom-tool.risk/pagination-url-not-pinned-to-host
-   :name "GitHub pagination URL is followed with the API token and no host check"
-   :desc "The rel=next URL from the Link header is requested with the same headers, including the Authorization bearer token, without checking scheme or host."
-   :doc "### Description
-
-adapter.vulnerability.github-advisory/parse-link-header returns the next URL from the response and fetch-advisories requests it with the original headers. Only a response from api.github.com over TLS can supply it, and the default HttpClient does not follow redirects, so exploitation needs a compromised or impersonated endpoint. Found in the security assessment at commit 5279795; confidence medium.
-
-### Impact
-
-The API key could be sent to a host other than api.github.com.
-
-### Mitigation
-
-Accept the next URL only if its scheme is https and its host is api.github.com (see requirement credentials-only-to-own-service). Not started."}
-
-  {:el :risk
-   :id :sbom-tool.risk/debug-println-to-stdout
-   :name "leftover debug println writes request URLs to stdout"
-   :desc "The osv, deps-dev and github-advisory adapters print 'Fetching URL: ...' to stdout, which pollutes report output and logs package names."
-   :doc "### Description
-
-adapter.vulnerability.deps-dev/fetch-json, adapter.vulnerability.github-advisory/fetch-page and adapter.vulnerability.osv/fetch-json and post-json call (println \"Fetching URL:\" url). This is a leftover debug statement, not intended behavior. Found in the security assessment at commit 5279795; confidence high. The adapters' warn helpers do write to stderr.
-
-### Impact
-
-Report output on stdout (edn, json, markdown) is corrupted when a live source is used, so it cannot be piped reliably. The URLs contain package names and versions, which end up in captured CI logs. It contradicts the requirement actionable-diagnostics and the decision diagnostics-on-stderr.
-
-### Mitigation
-
-Remove the statements, or send them to stderr behind --debug, ideally through the shared diagnostics function proposed in duplicated-warn-helpers. Not started."
-   :tags #{"technical debt"}}
-
-  {:el :risk
    :id :sbom-tool.risk/global-mutable-state
    :name "application state is one global atom"
    :desc "repository/state is a single atom that adapters fill and every report function reads implicitly, which hides data flow and blocks library use."
@@ -230,23 +164,6 @@ Hidden coupling between adapters and reports. A second run in the same process (
 Return data from the adapters and let the CLI assemble an explicit state map that is passed to the report functions (changes internals only, not the public contracts). Or accept the simplification and keep this entry as its record. Open decision for the maintainer."
    :tags #{"technical debt"}}
 
-  {:el :risk
-   :id :sbom-tool.risk/duplicated-adapter-infrastructure
-   :name "vulnerability adapters duplicate their HTTP infrastructure"
-   :desc "osv, deps-dev and github-advisory each carry their own HTTP client, request and error handling, API-key file reader, warn and bounded-pmap."
-   :doc "### Description
-
-Beyond bounded-pmap and warn (see duplicated-bounded-pmap and duplicated-warn-helpers), the three adapters repeat the HttpClient setup, the send and error-tagging pattern, the API-key file and environment lookup and the JsonProcessingException Class/forName workaround. Found in the architecture assessment at commit 5279795; confidence high.
-
-### Impact
-
-Each cross-cutting fix has to be made three times, and a fourth adapter (NVD) adds a copy. This includes the open security fixes (no-network-timeouts-or-size-limits, pagination-url-not-pinned-to-host, debug-println-to-stdout).
-
-### Mitigation
-
-Proposed decision shared-adapter-support: one adapter-internal support namespace. Not started."
-   :tags #{"technical debt"}}
-
   {:el :risk-for
    :id :sbom-tool.risk/global-mutable-state-risk-for-repository
    :from :sbom-tool.risk/global-mutable-state
@@ -258,26 +175,6 @@ Proposed decision shared-adapter-support: one adapter-internal support namespace
    :to :sbom-tool.decision/clean-architecture-layering}
 
   {:el :risk-for
-   :id :sbom-tool.risk/duplicated-adapter-infrastructure-risk-for-vulnerability-adapters
-   :from :sbom-tool.risk/duplicated-adapter-infrastructure
-   :to :sbom-tool.code.adapter/vulnerability}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/duplicated-adapter-infrastructure-risk-for-live-vulnerability-lookup
-   :from :sbom-tool.risk/duplicated-adapter-infrastructure
-   :to :sbom-tool.goal/live-vulnerability-lookup}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/debug-println-to-stdout-risk-for-diagnostics-on-stderr
-   :from :sbom-tool.risk/debug-println-to-stdout
-   :to :sbom-tool.decision/diagnostics-on-stderr}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/debug-println-to-stdout-risk-for-actionable-diagnostics
-   :from :sbom-tool.risk/debug-println-to-stdout
-   :to :sbom-tool.requirement/actionable-diagnostics}
-
-  {:el :risk-for
    :id :sbom-tool.risk/unsanitized-markdown-output-risk-for-markdown-report
    :from :sbom-tool.risk/unsanitized-markdown-output
    :to :sbom-tool.code.adapter.report/markdown}
@@ -286,31 +183,6 @@ Proposed decision shared-adapter-support: one adapter-internal support namespace
    :id :sbom-tool.risk/unsanitized-markdown-output-risk-for-multi-format-output
    :from :sbom-tool.risk/unsanitized-markdown-output
    :to :sbom-tool.goal/multi-format-output}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/no-network-timeouts-or-size-limits-risk-for-live-vulnerability-lookup
-   :from :sbom-tool.risk/no-network-timeouts-or-size-limits
-   :to :sbom-tool.goal/live-vulnerability-lookup}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/no-network-timeouts-or-size-limits-risk-for-ci-gate
-   :from :sbom-tool.risk/no-network-timeouts-or-size-limits
-   :to :sbom-tool.goal/ci-gate}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/pagination-url-not-pinned-to-host-risk-for-github-advisory-adapter
-   :from :sbom-tool.risk/pagination-url-not-pinned-to-host
-   :to :sbom-tool.code.adapter.vulnerability/github-advisory}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/pagination-url-not-pinned-to-host-risk-for-secrets-handling
-   :from :sbom-tool.risk/pagination-url-not-pinned-to-host
-   :to :sbom-tool.decision/configuration-and-secrets-handling}
-
-  {:el :risk-for
-   :id :sbom-tool.risk/duplicated-bounded-pmap-risk-for-bounded-concurrent-lookups
-   :from :sbom-tool.risk/duplicated-bounded-pmap
-   :to :sbom-tool.decision/bounded-concurrent-lookups}
 
   {:el :risk-for
    :id :sbom-tool.risk/duplicated-warn-helpers-risk-for-diagnostics-on-stderr
