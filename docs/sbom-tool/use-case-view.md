@@ -42,8 +42,11 @@ Shows the use cases and actors of the SBOM Tool
 | [User](../sbom-tool/user.md) |  | [define compliance policy](../sbom-tool/usecase/define-compliance-policy.md) |  |
 | [User](../sbom-tool/user.md) |  | [enforce policy gate](../sbom-tool/usecase/enforce-policy-gate.md) |  |
 | [User](../sbom-tool/user.md) |  | [generate license report](../sbom-tool/usecase/generate-license-report.md) |  |
+| [look up vulnerabilities](../sbom-tool/usecase/lookup-vulnerabilities.md) |  | [deps.dev](../sbom-tool/deps-dev.md) |  |
 | [User](../sbom-tool/user.md) |  | [generate copyright report](../sbom-tool/usecase/generate-copyright-report.md) |  |
+| [look up vulnerabilities](../sbom-tool/usecase/lookup-vulnerabilities.md) |  | [GitHub Advisory Database](../sbom-tool/github-advisory.md) |  |
 | [User](../sbom-tool/user.md) |  | [generate vulnerability report](../sbom-tool/usecase/generate-vulnerability-report.md) |  |
+| [look up vulnerabilities](../sbom-tool/usecase/lookup-vulnerabilities.md) |  | [OSV](../sbom-tool/osv.md) |  |
 
 ## Systems
 | System | Description |
@@ -51,13 +54,7 @@ Shows the use cases and actors of the SBOM Tool
 | [CI/CD Pipeline](../sbom-tool/ci-pipeline.md)| Automated pipeline that invokes the SBOM Tool to gate builds on compliance policy violations. |
 | [GitHub Advisory Database](../sbom-tool/github-advisory.md)| GitHub's advisory database, queried through the GitHub REST API. |
 | [OSV](../sbom-tool/osv.md)| Google's open source vulnerability database (osv.dev), queried by purl. |
-| [SBOM Tool](../sbom-tool/sbom-tool.md)| Reads CycloneDX and SPDX software bill of materials files and reports on license and vulnerability compliance. |
 | [deps.dev](../sbom-tool/deps-dev.md)| Google's open source insights service (deps.dev), queried by purl for vulnerability data. |
-
-## Containers
-| Container | Description |
-|---|---|
-| [SBOM Tool CLI](../sbom-tool/cli.md)| Command-line application that reads SBOM files and reports license and vulnerability compliance. |
 
 ## Navigation
 [List of views in namespace](./views-in-namespace.md)

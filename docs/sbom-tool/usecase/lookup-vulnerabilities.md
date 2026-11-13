@@ -3,6 +3,12 @@
 ## Description
 Look up known vulnerabilities for a component's package URL from deps.dev, GitHub Advisory Database or OSV.
 
+## Actor in Use Cases
+| Use Case | Description |
+|---|---|
+| [GitHub Advisory Database](../../sbom-tool/github-advisory.md) | GitHub's advisory database, queried through the GitHub REST API. |
+| [OSV](../../sbom-tool/osv.md) | Google's open source vulnerability database (osv.dev), queried by purl. |
+| [deps.dev](../../sbom-tool/deps-dev.md) | Google's open source insights service (deps.dev), queried by purl for vulnerability data. |
 ## Extended Use Cases
 | Use Case | Description |
 |---|---|

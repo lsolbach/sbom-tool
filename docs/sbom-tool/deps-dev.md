@@ -3,6 +3,10 @@
 ## Description
 Google's open source insights service (deps.dev), queried by purl for vulnerability data.
 
+## Actors
+| Actor | Description |
+|---|---|
+| [look up vulnerabilities](../sbom-tool/usecase/lookup-vulnerabilities.md) | Look up known vulnerabilities for a component's package URL from deps.dev, GitHub Advisory Database or OSV. |
 ## Incoming Synchronous Requests 
 | From | Name | To | Technology | Description |
 |---|---|---|---|---|

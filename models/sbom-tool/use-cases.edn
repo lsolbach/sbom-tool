@@ -153,5 +153,21 @@
    :id :sbom-tool.usecase/read-sbom-includes-consolidate-components
    :from :sbom-tool.usecase/read-sbom
    :to :sbom-tool.usecase/consolidate-components}
+
+  {:el :uses
+   :id :sbom-tool.usecase/lookup-vulnerabilities-uses-osv
+   :from :sbom-tool.usecase/lookup-vulnerabilities
+   :to :sbom-tool/osv}
+
+  {:el :uses
+   :id :sbom-tool.usecase/lookup-vulnerabilities-uses-github-advisory
+   :from :sbom-tool.usecase/lookup-vulnerabilities
+   :to :sbom-tool/github-advisory}
+  
+  {:el :uses
+   :id :sbom-tool.usecase/lookup-vulnerabilities-uses-deps-dev
+   :from :sbom-tool.usecase/lookup-vulnerabilities
+   :to :sbom-tool/deps-dev}
+
   ;
   }

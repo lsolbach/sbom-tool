@@ -1,6 +1,5 @@
 (ns sbom-tool.util.functions
-  "General, stateless helpers shared across layers. Like every namespace
-   in `sbom-tool.util`, this is a leaf: it depends on no other project
+  "General, stateless helpers shared across layers. It depends on no other project
    namespace."
   (:require [clojure.edn :as edn])
   (:import [java.net URLEncoder]
