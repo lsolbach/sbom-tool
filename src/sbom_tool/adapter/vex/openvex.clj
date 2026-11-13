@@ -15,7 +15,6 @@
   (:require [cheshire.core :as json]
             [babashka.fs :as fs]
             [clojure.string :as string]
-            [sbom-tool.domain.vex :as vex]
             [sbom-tool.util.functions :as fns]))
 
 (def ^:private json-processing-exception-class
